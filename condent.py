@@ -5,7 +5,11 @@ __version__ = "0.1"
 
 
 def single_line(left, items, right):
-    return "".join((left, "".join(items), right))
+    return "".join((left, " ".join(items), right))
+
+
+def fits_on_one_line(left, items, right):
+    return len(single_line(left, items, right)) <= 79
 
 
 def parts(source):
@@ -17,8 +21,8 @@ def parts(source):
     return start + start_break, left, body.strip(), right, end_break + end
 
 
-def fix_item(item):
-    return re.sub("\s*:\s*", " : ", item)
+def fixed(item):
+    return re.sub("\s*:\s*", " : ", item.strip())
 
 
 def split_items(body):
@@ -41,9 +45,9 @@ def fix_indentation(left, items, right):
 
 def redent(source):
     start, left, body, right, end = parts(source)
-    items = (fix_item(item) for item in split_items(body))
+    items = [fixed(item) for item in split_items(body)]
 
-    if "\n" not in source.rstrip():
+    if "\n" not in source.rstrip() or fits_on_one_line(left, items, right):
         return single_line(start + left, items, right + end)
 
     indented_items = "\n".join(fix_indentation(left, items, right))

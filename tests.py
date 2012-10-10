@@ -1,9 +1,16 @@
 from unittest import TestCase
 
+import mock
+
 from condent import redent
 
 
 class TestCondent(TestCase):
+    def setUp(self):
+        patch = mock.patch("condent.fits_on_one_line", return_value=False)
+        patch.start()
+        self.addCleanup(patch.stop)
+
     def test_it_does_not_correct_a_correct_single_line(self):
         source = 'd = {"foo" : "bar"}'
         self.assertEqual(redent(source), source)
@@ -83,7 +90,26 @@ d = {
         self.assertEqual(redent(source), 'd = {\n    "foo" : "bar"\n}')
 
 
+class TestFitsOnOneLine(TestCase):
+    def test_it_combines_dicts_that_fit_on_one_line(self):
+        source = """
+d = {
+           "this" : "dict",
+"fits" : "on",
+      "a single" : "line"
+}
+"""
+        self.assertEqual(
+            redent(source),
+            '\nd = {"this" : "dict", "fits" : "on", "a single" : "line"}\n')
+
+
 class TestFullExample(TestCase):
+    def setUp(self):
+        patch = mock.patch("condent.fits_on_one_line", return_value=False)
+        patch.start()
+        self.addCleanup(patch.stop)
+
     def test_full_example(self):
         source = """
             d = {"foo": "bar",
