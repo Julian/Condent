@@ -8,6 +8,20 @@ from condent import redent
 parser = argparse.ArgumentParser(
     description="A collection reindenter for Python.",
 )
+
+parser.add_argument(
+    "input",
+    nargs="*",
+    default=[sys.stdin],
+    type=argparse.FileType("r"),
+)
+
+parser.add_argument(
+    "-o", "--output",
+    default=sys.stdout,
+    type=argparse.FileType("w"),
+)
+
 parser.add_argument(
     "-s", "--no-symmetric-colons",
     dest="symmetric_colons",
@@ -16,6 +30,8 @@ parser.add_argument(
 
 arguments = parser.parse_args()
 
-input = sys.stdin.read()
-redented = redent(input, symmetric_colons=arguments.symmetric_colons)
-sys.stdout.write(redented)
+
+for file in arguments.input:
+    with file:
+        out = redent(file.read(), symmetric_colons=arguments.symmetric_colons)
+        arguments.output.write(out)
