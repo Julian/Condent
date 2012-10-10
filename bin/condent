@@ -1,4 +1,21 @@
 #! /usr/bin/env python
+import argparse
 import sys
+
 from condent import redent
-sys.stdout.write(redent(sys.stdin.read()))
+
+
+parser = argparse.ArgumentParser(
+    description="A collection reindenter for Python.",
+)
+parser.add_argument(
+    "-s", "--no-symmetric-colons",
+    dest="symmetric_colons",
+    action="store_false"
+)
+
+arguments = parser.parse_args()
+
+input = sys.stdin.read()
+redented = redent(input, symmetric_colons=arguments.symmetric_colons)
+sys.stdout.write(redented)

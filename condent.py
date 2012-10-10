@@ -21,8 +21,9 @@ def parts(source):
     return start + start_break, left, body.strip(), right, end_break + end
 
 
-def fixed(item):
-    return re.sub("\s*:\s*", " : ", item.strip())
+def fixed(item, symmetric_colons=True):
+    colon = " : " if symmetric_colons else ": "
+    return re.sub("\s*:\s*", colon, item.strip())
 
 
 def split_items(body):
@@ -43,9 +44,11 @@ def fix_indentation(left, items, right):
     yield indent * " " + right
 
 
-def redent(source):
+def redent(source, symmetric_colons=True):
     start, left, body, right, end = parts(source)
-    items = [fixed(item) for item in split_items(body)]
+    items = [
+        fixed(i, symmetric_colons=symmetric_colons) for i in split_items(body)
+    ]
 
     if "\n" not in source.rstrip() or fits_on_one_line(left, items, right):
         return single_line(start + left, items, right + end)

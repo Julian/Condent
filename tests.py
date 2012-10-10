@@ -5,7 +5,7 @@ import mock
 from condent import redent
 
 
-class TestCondent(TestCase):
+class TestDictRedent(TestCase):
     def setUp(self):
         patch = mock.patch("condent.fits_on_one_line", return_value=False)
         patch.start()
@@ -84,6 +84,13 @@ d = {
     def test_it_fixes_spaces_around_single_line_colons(self):
         source = 'd = {"foo": "bar", "baz":"quux"}'
         self.assertEqual(redent(source), 'd = {"foo" : "bar", "baz" : "quux"}')
+
+    def test_it_can_fix_spaces_around_colons_non_symmetrically(self):
+        source = 'd = {"foo": "bar", "baz":"quux"}'
+        self.assertEqual(
+            redent(source, symmetric_colons=False),
+            'd = {"foo": "bar", "baz": "quux"}',
+        )
 
     def test_it_fixes_spaces_around_colons(self):
         source = 'd = {"foo": "bar"\n}'
