@@ -8,6 +8,10 @@ class TestCondent(TestCase):
         source = 'd = {"foo" : "bar"}'
         self.assertEqual(redent(source), source)
 
+    def test_it_does_not_correct_a_correct_single_line_even_with_breaks(self):
+        source = 'd = {"foo" : "bar"}\n\n'
+        self.assertEqual(redent(source), source)
+
     def test_it_does_not_correct_a_correct_line_with_multiple_items(self):
         source = 'd = {"foo" : "bar", "baz" : "quux"}'
         self.assertEqual(redent(source), source)

@@ -43,8 +43,8 @@ def redent(source):
     start, left, body, right, end = parts(source)
     items = (fix_item(item) for item in split_items(body))
 
-    if "\n" not in source:
-        return single_line(left, items, right)
+    if "\n" not in source.rstrip():
+        return single_line(start + left, items, right + end)
 
     indented_items = "\n".join(fix_indentation(left, items, right))
     return "".join((start, indented_items, end))
