@@ -21,9 +21,7 @@ installed.
 Usage
 -----
 
-Sample invocation is:
-
-.. code:: python
+Sample invocation is::
 
     $ echo 'd = {"foo":"bar","baz":"quux"}' | condent 
     d = {"foo" : "bar","baz" : "quux"}
