@@ -117,6 +117,10 @@ class TestOtherDelimiters(TestCase):
         patch.start()
         self.addCleanup(patch.stop)
 
+    def test_single_line_function_call(self):
+        source = "d = foo(1, 2, 3)"
+        self.assertEqual(redent(source), source)
+
     def test_single_line_set(self):
         source = "d = {1, 2, 3}"
         self.assertEqual(redent(source), source)
@@ -128,6 +132,10 @@ class TestOtherDelimiters(TestCase):
     def test_single_line_list(self):
         source = "d = [1, 2, 3]"
         self.assertEqual(redent(source), source)
+
+    def test_multi_line_function_call(self):
+        source = "d = foo(\n1, 2, 3\n)"
+        self.assertEqual(redent(source), "d = foo(\n    1,\n    2,\n    3,\n)")
 
     def test_multi_line_list(self):
         source = """
