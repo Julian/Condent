@@ -79,7 +79,7 @@ d = {
 
     def test_it_puts_multiple_line_dict_braces_on_their_own_lines(self):
         source = 'd = {   "foo" : "bar"\n  }'
-        self.assertEqual(redent(source), 'd = {\n    "foo" : "bar"\n}')
+        self.assertEqual(redent(source), 'd = {\n    "foo" : "bar",\n}')
 
     def test_it_fixes_spaces_around_single_line_colons(self):
         source = 'd = {"foo": "bar", "baz":"quux"}'
@@ -94,7 +94,61 @@ d = {
 
     def test_it_fixes_spaces_around_colons(self):
         source = 'd = {"foo": "bar"\n}'
-        self.assertEqual(redent(source), 'd = {\n    "foo" : "bar"\n}')
+        self.assertEqual(redent(source), 'd = {\n    "foo" : "bar",\n}')
+
+    def test_it_leaves_a_trailing_comma(self):
+        source = """
+{
+    "foo" : "bar",
+    "baz" : "quux"
+}
+"""
+        self.assertEqual(redent(source), """
+{
+    "foo" : "bar",
+    "baz" : "quux",
+}
+""")
+
+
+class TestOtherDelimiters(TestCase):
+    def setUp(self):
+        patch = mock.patch("condent.fits_on_one_line", return_value=False)
+        patch.start()
+        self.addCleanup(patch.stop)
+
+    def test_single_line_set(self):
+        source = "d = {1, 2, 3}"
+        self.assertEqual(redent(source), source)
+
+    def test_single_line_tuple(self):
+        source = "d = (1, 2, 3)"
+        self.assertEqual(redent(source), source)
+
+    def test_single_line_list(self):
+        source = "d = [1, 2, 3]"
+        self.assertEqual(redent(source), source)
+
+    def test_multi_line_list(self):
+        source = """
+[1, 2,
+3, 4, 5,
+6]
+"""
+        self.assertEqual(redent(source), """
+[
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+]
+""")
+
+    def test_if_it_is_confused_it_does_nothing(self):
+        source = "awefoijaowf;oiwfe[qpk1240i-"
+        self.assertEqual(redent(source), source)
 
 
 class TestFitsOnOneLine(TestCase):

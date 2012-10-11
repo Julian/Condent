@@ -28,10 +28,30 @@ parser.add_argument(
     action="store_false"
 )
 
+
+parser.add_argument(
+    "-c", "--no-trailing-comma",
+    dest="trailing_comma",
+    action="store_false"
+)
+
+
+parser.add_argument(
+    "-C", "--single-line-trailing-comma",
+    dest="single_line_trailing_comma",
+    action="store_true"
+)
+
+
 arguments = parser.parse_args()
 
 
 for file in arguments.input:
     with file:
-        out = redent(file.read(), symmetric_colons=arguments.symmetric_colons)
+        out = redent(
+            file.read(),
+            symmetric_colons=arguments.symmetric_colons,
+            trailing_comma=arguments.trailing_comma,
+            single_line_trailing_comma=arguments.single_line_trailing_comma
+        )
         arguments.output.write(out)

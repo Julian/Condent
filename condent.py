@@ -4,13 +4,28 @@ import re
 __version__ = "0.1"
 
 
-def single_line(left, items, right):
+def find_delimiters(source):
+    """
+    Discover what kind of container literal the source contains.
+
+    """
+
+    for left, right in ["{}", "[]", "()"]:
+        if left in source and right in source:
+            return left, right
+    raise ValueError("Can't find the delimiters!")
+
+
+def single_line(left, items, right, trailing_comma=False):
     """
     Format the given collection on a single line.
 
     """
 
-    return "".join((left, " ".join(items), right))
+    items = " ".join(items)
+    if not trailing_comma:
+        items = items.rstrip(",")
+    return "".join((left, items, right))
 
 
 def fits_on_one_line(left, items, right):
@@ -22,7 +37,7 @@ def fits_on_one_line(left, items, right):
     return len(single_line(left, items, right)) <= 79
 
 
-def parts(source):
+def parts(source, delimiters="{}"):
     """
     Split a chunk of source into parts.
 
@@ -38,22 +53,27 @@ def parts(source):
 
     """
 
-    start, _, body = source.partition("{")
+    start, _, body = source.partition(delimiters[0])
     start, start_break, left = start.rpartition("\n")
-    body, _, end = body.rpartition("}")
+    body, _, end = body.rpartition(delimiters[1])
     right, end_break, end = end.partition("\n")
-    left, right = left + "{", "}" + right
+    left, right = left + delimiters[0], delimiters[1] + right
     return start + start_break, left, body.strip(), right, end_break + end
 
 
-def fixed(item, symmetric_colons=True):
+def fixed(item, symmetric_colons=True, trailing_comma=True):
     """
     Fix an individual collection item, removing surrounding whitespace.
 
     """
 
     colon = " : " if symmetric_colons else ": "
-    return re.sub("\s*:\s*", colon, item.strip())
+    item = re.sub("\s*:\s*", colon, item.strip())
+
+    if trailing_comma:
+        item = item.rstrip(",") + ","
+
+    return item
 
 
 def split_items(body):
@@ -84,19 +104,30 @@ def fix_indentation(left, items, right):
     yield indent * " " + right
 
 
-def redent(source, symmetric_colons=True):
+def redent(
+    source, symmetric_colons=True, trailing_comma=True,
+    single_line_trailing_comma=False,
+):
     """
     Redent the given source.
 
     """
 
-    start, left, body, right, end = parts(source)
+    try:
+        delimiters = find_delimiters(source)
+    except ValueError:
+        return source
+
+    start, left, body, right, end = parts(source, delimiters=delimiters)
     items = [
-        fixed(i, symmetric_colons=symmetric_colons) for i in split_items(body)
+        fixed(i, symmetric_colons, trailing_comma) for i in split_items(body)
     ]
 
     if "\n" not in source.rstrip() or fits_on_one_line(left, items, right):
-        return single_line(start + left, items, right + end)
+        comma = single_line_trailing_comma
+        return single_line(
+            start + left, items, right + end, trailing_comma=comma,
+        )
 
     indented_items = "\n".join(fix_indentation(left, items, right))
     return "".join((start, indented_items, end))
