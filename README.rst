@@ -37,16 +37,19 @@ Sample invocation and output is:
     $ echo 'd = {"foo":"bar","baz":"quux"}' | condent 
     d = {"foo" : "bar", "baz" : "quux"}
 
-    $ echo 'the_dict = {                                                                                                                                                                Julian@air
+    $ condent <<EOF
+    the_dict = {
     foo:bar,
     baz:quux,
-    spam:eggs}' | condent
+    spam:eggs}'
+    EOF
     the_dict = {foo : bar, baz : quux, spam : eggs}
 
-    $ echo '    an_already_indented_dict_that_does_not_fit_on_one_line = {                                                                                                              Julian@air
+    $ condent <<EOF
+        an_already_indented_dict_that_does_not_fit_on_one_line = {
     foo:bar, baz:quux,
-
-    spam:eggs}' | condent
+    spam:eggs}
+    EOF
         an_already_indented_dict_that_does_not_fit_on_one_line = {
             foo : bar,
             baz : quux,
