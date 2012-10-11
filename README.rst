@@ -16,6 +16,9 @@ It can fix basic things like:
     * Moving something that doesn't onto multiple lines
     * Fixing indentation of multiple line containers
 
+What it won't (shouldn't) do is change the semantics of your code. If it does,
+please open a ticket.
+
 
 Installation
 ------------
