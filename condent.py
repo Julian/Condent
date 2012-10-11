@@ -120,11 +120,10 @@ def redent(
         fixed(i, symmetric_colons, trailing_comma) for i in split_items(body)
     ]
 
-    if "\n" not in source.rstrip() or fits_on_one_line(left, items, right):
+    if fits_on_one_line(left, items, right):
         comma = single_line_trailing_comma
-        return single_line(
-            start + left, items, right + end, trailing_comma=comma,
-        )
+        line = single_line(left, items, right, trailing_comma=comma)
+        return start + line + end
 
     indented_items = "\n".join(fix_indentation(left, items, right))
     return "".join((start, indented_items, end))
