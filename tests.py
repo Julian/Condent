@@ -2,7 +2,21 @@ from unittest import TestCase
 
 import mock
 
-from condent import redent
+from condent import redent, split_items
+
+
+class TestSplitItems(TestCase):
+    def test_single_item(self):
+        items = "foo:bar"
+        self.assertEqual(list(split_items(items)), ["foo:bar"])
+
+    def test_multiple_item(self):
+        items = "foo:bar,\nbaz:quux"
+        self.assertEqual(list(split_items(items)), ["foo:bar", "baz:quux"])
+
+    def test_it_splits_a_single_line_with_multiple_items(self):
+        items = "foo:bar,baz:quux"
+        self.assertEqual(list(split_items(items)), ["foo:bar", "baz:quux"])
 
 
 class TestDictRedent(TestCase):
@@ -22,6 +36,10 @@ class TestDictRedent(TestCase):
     def test_it_does_not_correct_a_correct_line_with_multiple_items(self):
         source = 'd = {"foo" : "bar", "baz" : "quux"}'
         self.assertEqual(redent(source), source)
+
+    def test_it_respaces_items(self):
+        source = 'd = {"foo" : "bar","baz" : "quux"}'
+        self.assertEqual(redent(source), 'd = {"foo" : "bar", "baz" : "quux"}')
 
     def test_it_trims_extra_brace_spaces(self):
         source = 'd = {   "foo" : "bar"  }'
@@ -171,6 +189,12 @@ d = {
         self.assertEqual(
             redent(source),
             '\nd = {"this" : "dict", "fits" : "on", "a single" : "line"}\n')
+
+    def test_it_splits_up_dicts_that_exceed_line_limit(self):
+        pass
+
+    def test_it_combines_args_that_fit_on_one_line(self):
+        pass
 
 
 class TestFullExample(TestCase):

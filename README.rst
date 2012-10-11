@@ -10,6 +10,12 @@ generalizable to actually work with them in case it doesn't. I suspect over
 time I'll add actual support for the other languages I use on a semi-regular
 basis (mostly Ruby and JS).
 
+It can fix basic things like:
+    * Spacing
+    * Moving something that fits on a single line onto one line
+    * Moving something that doesn't onto multiple lines
+    * Fixing indentation of multiple line containers
+
 
 Installation
 ------------
@@ -24,7 +30,7 @@ Usage
 Sample invocation is::
 
     $ echo 'd = {"foo":"bar","baz":"quux"}' | condent 
-    d = {"foo" : "bar","baz" : "quux"}
+    d = {"foo" : "bar", "baz" : "quux"}
 
 You can see full usage info with ``condent -h``.
 

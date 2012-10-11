@@ -82,12 +82,9 @@ def split_items(body):
 
     """
 
-    for line in body.splitlines():
-        if line.count(",") > 1:
-            for item in line.replace(",", ",\n").splitlines():
-                yield item
-        else:
-            yield line
+    for item in re.split(",\n?", body):
+        if item:
+            yield item
 
 
 def fix_indentation(left, items, right):
