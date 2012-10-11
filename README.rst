@@ -30,7 +30,9 @@ installed.
 Usage
 -----
 
-Sample invocation and output is::
+Sample invocation and output is:
+
+.. code:: console
 
     $ echo 'd = {"foo":"bar","baz":"quux"}' | condent 
     d = {"foo" : "bar", "baz" : "quux"}
