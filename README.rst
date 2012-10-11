@@ -66,3 +66,16 @@ illustrate, this will produce ``{"foo" : "bar"}`` rather than producing
 ``{"foo": "bar"}``. If you really don't like that you can disable it with the
 command line flag ``--no-symmetric-colon``. There are a bunch of other
 subjective style choices that can be toggled with command line flags.
+
+
+Adding Features
+---------------
+
+Like many similar things, this is likely going to be a continual WIP. Like I
+said, I use things like this daily, so as I find bugs or desired features I'll
+probably fix or add them.
+
+There are a few specific things I have in mind which will probably get added
+in the next couple of days. If you have others, feel free to send a pull
+request. Even if I don't like or use the style you desire, if it's sane enough
+;) it probably be merged as an option anyhow.
