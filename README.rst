@@ -30,10 +30,26 @@ installed.
 Usage
 -----
 
-Sample invocation is::
+Sample invocation and output is::
 
     $ echo 'd = {"foo":"bar","baz":"quux"}' | condent 
     d = {"foo" : "bar", "baz" : "quux"}
+
+    $ echo 'the_dict = {                                                                                                                                                                Julian@air
+    foo:bar,
+    baz:quux,
+    spam:eggs}' | condent
+    the_dict = {foo : bar, baz : quux, spam : eggs}
+
+    $ echo '    an_already_indented_dict_that_does_not_fit_on_one_line = {                                                                                                              Julian@air
+    foo:bar, baz:quux,
+
+    spam:eggs}' | condent
+        an_already_indented_dict_that_does_not_fit_on_one_line = {
+            foo : bar,
+            baz : quux,
+            spam : eggs,
+        }
 
 You can see full usage info with ``condent -h``.
 
