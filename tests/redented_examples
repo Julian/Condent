@@ -166,3 +166,25 @@ foo(bar)
 foo(bar)
 foo(bar)
 ---
+foo(bar, baz)
+---
+d = foo(
+    "foo",
+    "bar",
+    "baz",
+    "quux",
+    "spam",
+    "eggs",
+    "other",
+    "thing",
+    "another",
+    "thing",
+)
+---
+                                                                        d = [
+                                                                            1,
+                                                                            2,
+                                                                            3,
+                                                                            4,
+                                                                        ]
+---
