@@ -51,9 +51,5 @@ class TestCondenter(TestCase):
 #         source = " " * 72 + "d = [1, 2, 3, 4]"
 #         self.assertGreater(len(redent(source).splitlines()), 1)
 # 
-#     def test_if_it_is_confused_it_does_nothing(self):
-#         source = "awefoijaowf;oiwfe[qpk1240i-"
-#         self.assertEqual(redent(source), source)
-# 
 #     def test_it_combines_args_that_fit_on_one_line(self):
 #         pass

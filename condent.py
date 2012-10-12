@@ -201,7 +201,8 @@ def find_delimiters(delimiters, line):
 
 
 def is_tuple(start, left_delimiter):
-    return left_delimiter == "("
+    _, __, callable = start.rpartition(" ")
+    return not callable and left_delimiter == "("
 
 
 def is_dict(start, left_delimiter, context, right_delimiter):

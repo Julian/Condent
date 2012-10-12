@@ -9,17 +9,19 @@ foo()
 ---
 d = {"foo" : "bar"}
 ---
-d = {"foo" : "bar", "baz" : "quux"}
----
 d = ["foo"]
----
-d = ["foo", "bar"]
 ---
 d = {"foo"}
 ---
-d = {"foo", "bar"}
----
 d = ("foo",)
+---
+d = foo("foo")
+---
+d = {"foo" : "bar", "baz" : "quux"}
+---
+d = ["foo", "bar"]
+---
+d = {"foo", "bar"}
 ---
 d = ("foo", "bar")
 ---
@@ -98,4 +100,25 @@ d = {"foo" : "bar", "baz" : "quux", "spam" : "eggs", "other" : "thing",
 }
 ---
 "awefoijaowf;oiwfe[qpk1240i-"
+---
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
+foo(bar)
 ---
