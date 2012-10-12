@@ -1,0 +1,56 @@
+# vim: set filetype=python :
+{}
+---
+()
+---
+[]
+---
+foo()
+---
+d = {"foo" : "bar"}
+---
+d = {"foo" : "bar", "baz" : "quux"}
+---
+d = ["foo"]
+---
+d = ["foo", "bar"]
+---
+d = {"foo"}
+---
+d = {"foo", "bar"}
+---
+d = ("foo",)
+---
+d = ("foo", "bar")
+---
+d = foo(1, 2, 3)
+---
+    d = {"foo" : "bar"}
+---
+1
+2
+3
+d = {"foo" : "bar"}
+"foo"
+---
+d = {   "foo" : "bar"  }
+---
+d = {"foo" : "bar","baz" : "quux"}
+---
+d = {"foo": "bar", "baz":"quux"}
+---
+d = (1,2)
+---
+d = (   1, 2   )
+---
+d = (   1,    2   )
+---
+d = {
+    "foo" : "bar", "baz" : "quux",
+}
+---
+d = {
+    "foo" : "bar", "baz" : "quux", "spam" : "eggs", "other" : "thing",
+    "another" : "thing"
+}
+---

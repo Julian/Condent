@@ -1,129 +1,192 @@
+import itertools
 import re
 
 
-__version__ = "0.1"
+__version__ = "0.2"
 
 
-def find_delimiters(source):
+class Condenter(object):
+
+    visitors = {"}" : "brace", "]" : "sequence", ")" : "sequence"}
+    delimiters = {"{" : "}", "[" : "]", "(" : ")"}
+
+    def __init__(self, symmetric_colon=True):
+        self.symmetric_colon = symmetric_colon
+        self.context = []
+        self.stack = []
+
+    def redent(self, lines):
+        """
+        Redent the given iterable of lines.
+
+        Returns a generator which will yield redented lines.
+
+        """
+
+        for line in lines:
+            for redented in self.visit(line):
+                yield redented
+
+    def visit(self, line):
+        """
+        Visit a line.
+
+        Returns an iterable of redented lines that became available after
+        visiting the given line.
+
+        """
+
+        for delimit in (self.find_left_delimiter, self.find_right_delimiter):
+            result = delimit(line)
+            if result is not None:
+                return result
+        else:
+            return self.non_delimited(line)
+
+    def find_left_delimiter(self, line):
+        """
+        Find a left delimiter if it exists in the line.
+
+        """
+
+        start, delimiter, end =  find_delimiters(self.delimiters, line)
+        if delimiter is not None:
+            return self.enter_container(start, delimiter, end)
+        assert end is None, "Found no left delimiter but end is: " + repr(end)
+
+    def find_right_delimiter(self, line):
+        """
+        Find a right delimiter if it exists in the line.
+
+        """
+
+        start, delimiter, end = find_delimiters(self.delimiters.values(), line)
+        if delimiter is not None:
+            return self.exit_container(start, delimiter, end)
+        assert end is None, "Found no right delimiter but end is: " + repr(end)
+
+    def enter_container(self, start, delimiter, end):
+        """
+        A left delimiter was encountered.
+
+        """
+
+        self.stack.append((start, delimiter))
+        if end:
+            return self.visit(end)
+
+    def non_delimited(self, line):
+        """
+        A lite without a delimiter was encountered.
+
+        If we're inside a container, it's a line with items to be buffered
+        until the right delimiter is reached. Otherwise it's a non-container
+        line, and is returned unchanged immediately.
+
+        """
+
+        if not self.stack:
+            return [line]
+        else:
+            self.context.append(line)
+            return []
+
+    def exit_container(self, start, delimiter, end):
+        """
+        A right delimiter was encountered.
+
+        It's time to redent and return the buffered lines.
+
+        """
+
+        self.context.append(start)
+
+        visitor = getattr(self, "visit_" + self.visitors[delimiter])
+        result = visitor(*self.stack.pop() + (self.context, delimiter))
+        self.context = []
+        return itertools.chain(result, self.visit(end))
+
+    def visit_brace(self, *args):
+        if is_dict(*args):
+            return self.visit_dict(*args)
+        else:
+            return self.visit_sequence(*args)
+
+    def visit_dict(self, start, left_delimiter, context, right_delimiter):
+        cleaned = self.cleaned_dict_items(context)
+        return self.container(start, left_delimiter, cleaned, right_delimiter)
+
+    def visit_sequence(self, start, left_delimiter, context, right_delimiter):
+        cleaned = self.cleaned_sequence_items(context)
+        return self.container(start, left_delimiter, cleaned, right_delimiter)
+
+    def container(self, start, left_delimiter, items, right_delimiter):
+        items = list(items)
+        line = self.single_line(start, left_delimiter, items, right_delimiter)
+        if len(line) <= 79:
+            return line
+        return self.multi_line(start, left_delimiter, items, right_delimiter)
+
+    def single_line(self, start, left_delimiter, items, right_delimiter):
+        items = self.items(start, left_delimiter, items, right_delimiter)
+        return "".join([start, left_delimiter, items, right_delimiter])
+
+    def multi_line(self, start, left_delimiter, items, right_delimiter):
+        items = self.multi_line_items(self.indent_for(start), items)
+        return "\n".join([start + left_delimiter, items, right_delimiter])
+
+    def indent_for(self, start):
+        return 4 * " "
+
+    def split_items(self, items):
+        for line in items:
+            for item in re.split(",\n?", line.strip()):
+                if item:
+                    yield item
+
+    def items(self, start, left_delimiter, items, right_delimiter):
+        joined = ", ".join(items).rstrip(",")
+        if is_tuple(start, left_delimiter) and len(items) == 1:
+            joined += ","
+        return joined
+
+    def multi_line_items(self, indent, items):
+        return ",\n".join(indent + item for item in items) + ","
+
+    def cleaned_sequence_items(self, items):
+        return (self.sequence_item(item) for item in self.split_items(items))
+
+    def cleaned_dict_items(self, items, separator=":"):
+        for item in self.split_items(items):
+            key, value = re.split("\s*{}\s*".format(separator), item)
+            yield self.dict_item(key, value)
+
+    def dict_item(self, key, value, separator=":"):
+        if self.symmetric_colon:
+            separator = " " + separator
+        return self.sequence_item("{0}{1} {2}".format(key, separator, value))
+
+    def sequence_item(self, e, separator=","):
+        return e.strip()
+
+
+def find_delimiters(delimiters, line):
     """
-    Discover what kind of container literal the source contains.
+    Partition the line using the given delimiters.
+
+    Always returns a 3-tuple of the line up until the delimiter, the delimiter,
+    and the line following the delimiter.
 
     """
 
-    for left, right in ["{}", "[]", "()"]:
-        if left in source and right in source:
-            return left, right
-    raise ValueError("Can't find the delimiters!")
+    delimiter_re = "|".join(re.escape(d) for d in delimiters)
+    result = re.split("({0})".format(delimiter_re), line)
+    return tuple(result + [None] * (3 - len(result)))
 
 
-def single_line(left, items, right, trailing_comma=False):
-    """
-    Format the given collection on a single line.
-
-    """
-
-    items = " ".join(items)
-    if not trailing_comma:
-        items = items.rstrip(",")
-    return "".join((left, items, right))
+def is_tuple(start, left_delimiter):
+    return left_delimiter == "("
 
 
-def fits_on_one_line(left, items, right):
-    """
-    Check if the given collection would fit on a single line.
-
-    """
-
-    return len(single_line(left, items, right)) <= 79
-
-
-def parts(source, delimiters="{}"):
-    """
-    Split a chunk of source into parts.
-
-    The parts are:
-        * the lines before the line containing the beginning of the literal
-        * the (entire) line containing the beginning of the literal
-        * the (possibly partial first line and succeeding) lines containing the
-          items of the literal
-        * the (entire) line containing the end of the literal
-        * the lines after the line containing the end of the literal
-
-    They are returned as a tuple in that order.
-
-    """
-
-    start, _, body = source.partition(delimiters[0])
-    start, start_break, left = start.rpartition("\n")
-    body, _, end = body.rpartition(delimiters[1])
-    right, end_break, end = end.partition("\n")
-    left, right = left + delimiters[0], delimiters[1] + right
-    return start + start_break, left, body.strip(), right, end_break + end
-
-
-def fixed(item, symmetric_colons=True, trailing_comma=True):
-    """
-    Fix an individual collection item, removing surrounding whitespace.
-
-    """
-
-    colon = " : " if symmetric_colons else ": "
-    item = re.sub("\s*:\s*", colon, item.strip())
-
-    if trailing_comma:
-        item = item.rstrip(",") + ","
-
-    return item
-
-
-def split_items(body):
-    """
-    Split the items of a collection to be one per line.
-
-    """
-
-    for item in re.split(",\n?", body):
-        if item:
-            yield item
-
-
-def fix_indentation(left, items, right):
-    """
-    Correct the indentation of the lines using the indent of the first line.
-
-    """
-
-    indent = len(left) - len(left.lstrip())
-
-    yield left
-    for item in items:
-        yield (indent + 4) * " " + item.lstrip()
-    yield indent * " " + right
-
-
-def redent(
-    source, symmetric_colons=True, trailing_comma=True,
-    single_line_trailing_comma=False,
-):
-    """
-    Redent the given source.
-
-    """
-
-    try:
-        delimiters = find_delimiters(source)
-    except ValueError:
-        return source
-
-    start, left, body, right, end = parts(source, delimiters=delimiters)
-    items = [
-        fixed(i, symmetric_colons, trailing_comma) for i in split_items(body)
-    ]
-
-    if fits_on_one_line(left, items, right):
-        comma = single_line_trailing_comma
-        line = single_line(left, items, right, trailing_comma=comma)
-        return start + line + end
-
-    indented_items = "\n".join(fix_indentation(left, items, right))
-    return "".join((start, indented_items, end))
+def is_dict(start, left_delimiter, context, right_delimiter):
+    return any(":" in line for line in context)
