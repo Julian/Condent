@@ -55,3 +55,88 @@ d = {
     "another" : "thing",
 }
 ---
+d = {
+    "foo" : "bar",
+    "baz" : "quux",
+    "spam" : "eggs",
+    "other" : "thing",
+    "another" : "thing",
+}
+---
+d = {
+    "foo",
+    "foo",
+    "bar",
+    "bar",
+    "baz",
+    "baz",
+    "quux",
+    "quux",
+    "spam",
+    "spam",
+    "eggs",
+    "eggs",
+}
+---
+d = {
+    "foo",
+    "foo",
+    "bar",
+    "bar",
+    "baz",
+    "baz",
+    "quux",
+    "quux",
+    "spam",
+    "spam",
+    "eggs",
+    "eggs",
+}
+---
+d = [
+    "foo",
+    "foo",
+    "bar",
+    "bar",
+    "baz",
+    "baz",
+    "quux",
+    "quux",
+    "spam",
+    "spam",
+    "eggs",
+    "eggs",
+]
+---
+d = [
+    "foo",
+    "foo",
+    "bar",
+    "bar",
+    "baz",
+    "baz",
+    "quux",
+    "quux",
+    "spam",
+    "spam",
+    "eggs",
+    "eggs",
+]
+---
+d = {
+    "foo" : "bar",
+    "baz" : "quux",
+    "spam" : "eggs",
+    "other" : "thing",
+    "another" : "thing",
+}
+---
+        d = {"foo" : "bar", "baz" : "quux"}
+---
+                                d = {
+                                    "foo" : "bar",
+                                    "baz" : "quux",
+                                    "spam" : "eggs",
+                                    "other" : "thing",
+                                    "another" : "thing",
+                                }

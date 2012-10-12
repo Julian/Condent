@@ -132,11 +132,14 @@ class Condenter(object):
         return "".join([start, left_delimiter, items, right_delimiter])
 
     def multi_line(self, start, left_delimiter, items, right_delimiter):
-        items = self.multi_line_items(self.indent_for(start), items)
-        return "\n".join([start + left_delimiter, items, right_delimiter])
+        indent = self.indent_for(start)
+        items = self.multi_line_items(indent + "    ", items)
+        end = indent + right_delimiter
+        return "\n".join([start + left_delimiter, items, end])
 
     def indent_for(self, start):
-        return 4 * " "
+        indent = len(start) - len(start.lstrip(" "))
+        return indent * " "
 
     def split_items(self, items):
         for line in items:
@@ -162,7 +165,7 @@ class Condenter(object):
             yield self.dict_item(key, value)
 
     def dict_item(self, key, value, separator=":"):
-        if self.config.symmetric_colon:
+        if self.config.symmetric_colons:
             separator = " " + separator
         return self.sequence_item("{0}{1} {2}".format(key, separator, value))
 

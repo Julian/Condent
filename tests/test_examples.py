@@ -11,7 +11,7 @@ SEP = "---\n"
 
 
 class Config(object):
-    symmetric_colon = True
+    symmetric_colons = True
     trailing_comma = True
     single_line_trailing_comma = False
 

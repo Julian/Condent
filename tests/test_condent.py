@@ -33,117 +33,20 @@ class TestCondenter(TestCase):
                 self.assertFalse(enter.called)
 
     def test_it_can_fix_spaces_around_colons_non_symmetrically(self):
-        self.condenter.config.symmetric_colon = False
+        self.condenter.config.symmetric_colons = False
         source = 'd = {"foo": "bar"}'
         self.assertRedents(source, source)
 
 
-
-# class TestDictRedent(TestCase):
-#     def setUp(self):
-#         patch = mock.patch("condent.fits_on_one_line", return_value=False)
-#         patch.start()
-#         self.addCleanup(patch.stop)
-# 
-#     def test_it_splits_up_multiple_items_on_a_line(self):
-#         source = """
-# d = {
-#     "foo" : "bar", "baz" : "quux",
-# }
-# """
-# 
-#         self.assertEqual(redent(source), """
-# d = {
-#     "foo" : "bar",
-#     "baz" : "quux",
-# }
-# """)
-# 
 #     def test_it_does_not_split_tuple_assignment(self):
 #         pass
 # 
 #     def test_it_does_not_split_string_literals(self):
 #         pass
 # 
-#     def test_it_reindents_items(self):
-#         source = """
-# d = {
-# "foo" : "bar",
-#         "baz" : "quux",
-# }
-# """
-# 
-#         self.assertEqual(redent(source), """
-# d = {
-#     "foo" : "bar",
-#     "baz" : "quux",
-# }
-# """)
-# 
-#     def test_it_reindents_more_if_first_line_is_indented(self):
-#         source = """
-#         d = {
-# "foo" : "bar",
-#         "baz" : "quux",
-# }
-# """
-# 
-#         self.assertEqual(redent(source), """
-#         d = {
-#             "foo" : "bar",
-#             "baz" : "quux",
-#         }
-# """)
-# 
-#     def test_it_puts_multiple_line_dict_braces_on_their_own_lines(self):
-#         source = 'd = {   "foo" : "bar"\n  }'
-#         self.assertEqual(redent(source), 'd = {\n    "foo" : "bar",\n}')
-# 
-#     def test_it_fixes_spaces_around_colons(self):
-#         source = 'd = {"foo": "bar"\n}'
-#         self.assertEqual(redent(source), 'd = {\n    "foo" : "bar",\n}')
-# 
-#     def test_it_leaves_a_trailing_comma(self):
-#         source = """
-# {
-#     "foo" : "bar",
-#     "baz" : "quux"
-# }
-# """
-#         self.assertEqual(redent(source), """
-# {
-#     "foo" : "bar",
-#     "baz" : "quux",
-# }
-# """)
-# 
-# 
-# class TestOtherDelimiters(TestCase):
-#     def setUp(self):
-#         patch = mock.patch("condent.fits_on_one_line", return_value=False)
-#         patch.start()
-#         self.addCleanup(patch.stop)
-# 
 #     def test_multi_line_function_call(self):
 #         source = "d = foo(\n1, 2, 3\n)"
 #         self.assertEqual(redent(source), "d = foo(\n    1,\n    2,\n    3,\n)")
-# 
-#     def test_multi_line_list(self):
-#         source = """
-# [1, 2,
-# 3, 4, 5,
-# 6]
-# """
-#         self.assertEqual(redent(source), """
-# [
-#     1,
-#     2,
-#     3,
-#     4,
-#     5,
-#     6,
-# ]
-# """)
 # 
 #     def test_it_splits_up_containers_exceeding_line_limit(self):
 #         source = " " * 72 + "d = [1, 2, 3, 4]"
@@ -153,43 +56,5 @@ class TestCondenter(TestCase):
 #         source = "awefoijaowf;oiwfe[qpk1240i-"
 #         self.assertEqual(redent(source), source)
 # 
-# 
-# class TestFitsOnOneLine(TestCase):
-#     def test_it_combines_dicts_that_fit_on_one_line(self):
-#         source = """
-# d = {
-#            "this" : "dict",
-# "fits" : "on",
-#       "a single" : "line"
-# }
-# """
-#         self.assertEqual(
-#             redent(source),
-#             '\nd = {"this" : "dict", "fits" : "on", "a single" : "line"}\n')
-# 
 #     def test_it_combines_args_that_fit_on_one_line(self):
 #         pass
-# 
-# 
-# class TestFullExample(TestCase):
-#     def setUp(self):
-#         patch = mock.patch("condent.fits_on_one_line", return_value=False)
-#         patch.start()
-#         self.addCleanup(patch.stop)
-# 
-#     def test_full_example(self):
-#         source = """
-#             d = {"foo": "bar",
-#         "baz" : "quux",
-#                             "spam": "eggs", "cat": "dog",}"""
-# 
-#         self.assertEqual(
-#             redent(source),
-#             """
-#             d = {
-#                 "foo" : "bar",
-#                 "baz" : "quux",
-#                 "spam" : "eggs",
-#                 "cat" : "dog",
-#             }"""
-#         )
