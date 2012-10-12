@@ -2,7 +2,7 @@
 import argparse
 import sys
 
-from condent import redent
+from condent import Condenter
 
 
 parser = argparse.ArgumentParser(
@@ -44,14 +44,8 @@ parser.add_argument(
 
 
 arguments = parser.parse_args()
-
+condenter = Condenter(arguments)
 
 for file in arguments.input:
     with file:
-        out = redent(
-            file.read(),
-            symmetric_colons=arguments.symmetric_colons,
-            trailing_comma=arguments.trailing_comma,
-            single_line_trailing_comma=arguments.single_line_trailing_comma
-        )
-        arguments.output.write(out)
+        arguments.output.writelines(condenter.redent(file))

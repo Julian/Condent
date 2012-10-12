@@ -10,6 +10,12 @@ REDENTED_FILE = os.path.join(os.path.dirname(__file__), "redented_examples")
 SEP = "---\n"
 
 
+class Config(object):
+    symmetric_colon = True
+    trailing_comma = True
+    single_line_trailing_comma = False
+
+
 class TestExamples(unittest.TestCase):
     def test_it_redents_the_examples(self):
         with open(EXAMPLE_FILE) as examples, open(REDENTED_FILE) as expected:
@@ -19,7 +25,7 @@ class TestExamples(unittest.TestCase):
             expected = [e.splitlines(True) for e in expected.read().split(SEP)]
 
             for example, expect in zip(examples, expected):
-                example = "".join(Condenter().redent(example))
+                example = "".join(Condenter(Config).redent(example))
                 expect = "".join(expect)
 
                 try:

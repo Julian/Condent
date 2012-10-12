@@ -10,8 +10,8 @@ class Condenter(object):
     visitors = {"}" : "brace", "]" : "sequence", ")" : "sequence"}
     delimiters = {"{" : "}", "[" : "]", "(" : ")"}
 
-    def __init__(self, symmetric_colon=True):
-        self.symmetric_colon = symmetric_colon
+    def __init__(self, config):
+        self.config = config
         self.context = []
         self.stack = []
 
@@ -162,7 +162,7 @@ class Condenter(object):
             yield self.dict_item(key, value)
 
     def dict_item(self, key, value, separator=":"):
-        if self.symmetric_colon:
+        if self.config.symmetric_colon:
             separator = " " + separator
         return self.sequence_item("{0}{1} {2}".format(key, separator, value))
 

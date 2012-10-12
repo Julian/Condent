@@ -8,7 +8,8 @@ from condent import Condenter
 
 class TestCondenter(TestCase):
     def setUp(self):
-        self.condenter = Condenter()
+        self.config = mock.Mock()
+        self.condenter = Condenter(self.config)
 
     def assertRedents(self, input, output):
         lines = dedent(input).splitlines(True)
@@ -32,7 +33,7 @@ class TestCondenter(TestCase):
                 self.assertFalse(enter.called)
 
     def test_it_can_fix_spaces_around_colons_non_symmetrically(self):
-        self.condenter.symmetric_colon = False
+        self.condenter.config.symmetric_colon = False
         source = 'd = {"foo": "bar"}'
         self.assertRedents(source, source)
 
