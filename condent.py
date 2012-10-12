@@ -26,6 +26,7 @@ class Condenter(object):
         for line in lines:
             for redented in self.visit(line):
                 yield redented
+        yield self.done()
 
     def visit(self, line):
         """
@@ -42,6 +43,18 @@ class Condenter(object):
                 return result
         else:
             return self.non_delimited(line)
+
+    def done(self):
+        """
+        You ain't gots to go home, but you got to get the hell up outta here.
+
+        The end of the input was reached. Who knows what is half-parsed, but
+        it's gotta be shipped, now.
+
+        """
+
+        result = "".join(start + d for start, d in reversed(self.stack))
+        return result + "".join(self.context)
 
     def find_left_delimiter(self, line):
         """

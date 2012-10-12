@@ -37,7 +37,6 @@ class TestCondenter(TestCase):
         source = 'd = {"foo": "bar"}'
         self.assertRedents(source, source)
 
-
 #     def test_it_does_not_split_tuple_assignment(self):
 #         pass
 # 
