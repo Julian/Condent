@@ -37,6 +37,11 @@ class TestCondenter(TestCase):
         source = 'd = {"foo": "bar"}'
         self.assertRedents(source, source)
 
+    def test_it_can_leave_off_trailing_commas(self):
+        self.condenter.config.trailing_comma = False
+        source = 'd = {"foo" : "bar", "baz" : "quux"}'
+        self.assertRedents(source, source)
+
 #     def test_it_does_not_split_tuple_assignment(self):
 #         pass
 # 

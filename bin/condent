@@ -36,11 +36,11 @@ parser.add_argument(
 )
 
 
-parser.add_argument(
-    "-C", "--single-line-trailing-comma",
-    dest="single_line_trailing_comma",
-    action="store_true"
-)
+# parser.add_argument(
+#     "-C", "--single-line-trailing-comma",
+#     dest="single_line_trailing_comma",
+#     action="store_true"
+# )
 
 
 arguments = parser.parse_args()
