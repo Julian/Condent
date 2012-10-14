@@ -147,6 +147,7 @@ def dict_literal(
 
 
 def container_literal(start, left_delimiter, items, right_delimiter):
+    start = _clean_start(start)
     items = list(_clean_sequence_items(items))
 
     c = _single_line_container(start, left_delimiter, items, right_delimiter)
@@ -154,6 +155,10 @@ def container_literal(start, left_delimiter, items, right_delimiter):
         return c
 
     return _multi_line_container(start, left_delimiter, items, right_delimiter)
+
+
+def _clean_start(start):
+    return re.sub("\s*=\s*$", " = ", start)
 
 
 def _indent_for(start):
@@ -182,8 +187,8 @@ def _clean_sequence_items(items):
     return (_sequence_item(item) for item in _split_items(items))
 
 
-def _sequence_item(e):
-    return e.strip()
+def _sequence_item(item):
+    return item.strip()
 
 
 def _single_line_container(start, left_delimiter, items, right_delimiter):
