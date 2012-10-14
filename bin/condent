@@ -12,18 +12,21 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     "input",
     nargs="*",
+    help="a file containing the container to reindent",
     default=[sys.stdin],
     type=argparse.FileType("r"),
 )
 
 parser.add_argument(
     "-o", "--output",
+    help="output file for reindented container (default: stdout)",
     default=sys.stdout,
     type=argparse.FileType("w"),
 )
 
 parser.add_argument(
     "-s", "--no-symmetric-colons",
+    help="output {foo: bar} rather than {foo : bar}",
     dest="symmetric_colons",
     action="store_false"
 )
@@ -31,6 +34,7 @@ parser.add_argument(
 
 parser.add_argument(
     "-c", "--no-trailing-comma",
+    help="don't add trailing commas",
     dest="trailing_comma",
     action="store_false"
 )
