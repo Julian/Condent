@@ -90,7 +90,7 @@ class Condenter(object):
 
     def non_delimited(self, line):
         """
-        A lite without a delimiter was encountered.
+        A line without a delimiter was encountered.
 
         If we're inside a container, it's a line with items to be buffered
         until the right delimiter is reached. Otherwise it's a non-container
