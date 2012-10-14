@@ -27,8 +27,6 @@ class Condenter(object):
             for line in lines:
                 for redented in self.visit(line):
                     yield redented
-        except ValueError:
-            pass
         finally:
             yield self.done()
 
@@ -134,7 +132,7 @@ class Condenter(object):
         return dict_literal(
             start,
             left_delimiter,
-            items,
+            _clean_dict_items(items, separator),
             right_delimiter,
             separator=separator,
             trailing_comma=self.config.trailing_comma,
@@ -144,7 +142,7 @@ class Condenter(object):
         return container_literal(
             start,
             left_delimiter,
-            items,
+            _clean_sequence_items(items),
             right_delimiter,
             self.config.trailing_comma,
         )
@@ -154,9 +152,8 @@ def dict_literal(
     start, left_delimiter, items, right_delimiter,
     separator=" : ", trailing_comma=True,
 ):
-    cleaned = _clean_dict_items(items, separator)
     return container_literal(
-        start, left_delimiter, cleaned, right_delimiter, trailing_comma,
+        start, left_delimiter, items, right_delimiter, trailing_comma,
     )
 
 
@@ -164,7 +161,7 @@ def container_literal(
     start, left_delimiter, items, right_delimiter, trailing_comma=True,
 ):
     start = _clean_start(start)
-    items = list(_clean_sequence_items(items))
+    items = list(items)
 
     c = _single_line_container(start, left_delimiter, items, right_delimiter)
     if len(c) <= 79:

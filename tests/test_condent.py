@@ -39,6 +39,18 @@ class TestCondenter(TestCase):
 
     def test_it_can_leave_off_trailing_commas(self):
         self.condenter.config.trailing_comma = False
+        source = """
+                                                            d = {
+                                                                "foo" : "bar",
+                                                                "baz" : "quux"
+                                                            }
+        """.splitlines(True)
+        self.assertEqual(
+            "".join(self.condenter.redent(source)), "".join(source)
+        )
+
+    def test_it_can_leave_off_trailing_commas_in_single_lines(self):
+        self.condenter.config.trailing_comma = False
         source = 'd = {"foo" : "bar", "baz" : "quux"}'
         self.assertRedents(source, source)
 
