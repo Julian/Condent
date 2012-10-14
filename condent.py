@@ -125,65 +125,75 @@ class Condenter(object):
         else:
             return self.visit_sequence(*args)
 
-    def visit_dict(self, start, left_delimiter, context, right_delimiter):
-        cleaned = self.cleaned_dict_items(context)
-        return self.container(start, left_delimiter, cleaned, right_delimiter)
+    def visit_dict(self, start, left_delimiter, items, right_delimiter):
+        separator = " : " if self.config.symmetric_colons else ": "
+        return dict_literal(
+            start, left_delimiter, items, right_delimiter, separator=separator
+        )
 
-    def visit_sequence(self, start, left_delimiter, context, right_delimiter):
-        cleaned = self.cleaned_sequence_items(context)
-        return self.container(start, left_delimiter, cleaned, right_delimiter)
+    def visit_sequence(self, start, left_delimiter, items, right_delimiter):
+        return container_literal(start, left_delimiter, items, right_delimiter)
 
-    def container(self, start, left_delimiter, items, right_delimiter):
-        items = list(items)
-        line = self.single_line(start, left_delimiter, items, right_delimiter)
-        if len(line) <= 79:
-            return line
-        return self.multi_line(start, left_delimiter, items, right_delimiter)
 
-    def single_line(self, start, left_delimiter, items, right_delimiter):
-        items = self.items(start, left_delimiter, items, right_delimiter)
-        return "".join([start, left_delimiter, items, right_delimiter])
+def dict_literal(
+    start, left_delimiter, items, right_delimiter, separator=" : ",
+):
+    cleaned = _clean_dict_items(items, separator)
+    return container_literal(start, left_delimiter, cleaned, right_delimiter)
 
-    def multi_line(self, start, left_delimiter, items, right_delimiter):
-        indent = self.indent_for(start)
-        items = self.multi_line_items(indent + "    ", items)
-        end = indent + right_delimiter
-        return "\n".join([start + left_delimiter, items, end])
 
-    def indent_for(self, start):
-        indent = len(start) - len(start.lstrip(" "))
-        return indent * " "
+def container_literal(start, left_delimiter, items, right_delimiter):
+    items = list(_clean_sequence_items(items))
 
-    def split_items(self, items):
-        for line in items:
-            for item in re.split(",\n?", line.strip()):
-                if item:
-                    yield item
+    c = _single_line_container(start, left_delimiter, items, right_delimiter)
+    if len(c) <= 79:
+        return c
 
-    def items(self, start, left_delimiter, items, right_delimiter):
-        joined = ", ".join(items).rstrip(",")
-        if is_tuple(start, left_delimiter) and len(items) == 1:
-            joined += ","
-        return joined
+    return _multi_line_container(start, left_delimiter, items, right_delimiter)
 
-    def multi_line_items(self, indent, items):
-        return ",\n".join(indent + item for item in items) + ","
 
-    def cleaned_sequence_items(self, items):
-        return (self.sequence_item(item) for item in self.split_items(items))
+def _indent_for(start):
+    indent = len(start) - len(start.lstrip(" "))
+    return indent * " "
 
-    def cleaned_dict_items(self, items, separator=":"):
-        for item in self.split_items(items):
-            key, value = re.split("\s*{}\s*".format(separator), item)
-            yield self.dict_item(key, value)
 
-    def dict_item(self, key, value, separator=":"):
-        if self.config.symmetric_colons:
-            separator = " " + separator
-        return self.sequence_item("{0}{1} {2}".format(key, separator, value))
+def _split_items(items):
+    for line in items:
+        for item in re.split(",\n?", line.strip()):
+            if item:
+                yield item
 
-    def sequence_item(self, e, separator=","):
-        return e.strip()
+
+def _clean_dict_items(items, separator):
+    for item in _split_items(items):
+        key, value = re.split("\s*{}\s*".format(separator.strip()), item)
+        yield _dict_item(key, value, separator)
+
+
+def _dict_item(key, value, separator):
+    return _sequence_item("{0}{1}{2}".format(key, separator, value))
+
+
+def _clean_sequence_items(items):
+    return (_sequence_item(item) for item in _split_items(items))
+
+
+def _sequence_item(e):
+    return e.strip()
+
+
+def _single_line_container(start, left_delimiter, items, right_delimiter):
+    joined = ", ".join(items).rstrip(",")
+    if is_tuple(start, left_delimiter) and len(items) == 1:
+        joined += ","
+    return "".join([start, left_delimiter, joined, right_delimiter])
+
+
+def _multi_line_container(start, left_delimiter, items, right_delimiter):
+    indent = _indent_for(start)
+    items = ",\n".join(indent + "    " + item for item in items) + ","
+    end = indent + right_delimiter
+    return "\n".join([start + left_delimiter, items, end])
 
 
 def find_delimiters(delimiters, line):
