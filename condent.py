@@ -134,7 +134,6 @@ class Condenter(object):
             left_delimiter,
             _clean_dict_items(items, separator),
             right_delimiter,
-            separator=separator,
             trailing_comma=self.config.trailing_comma,
         )
 
@@ -149,8 +148,7 @@ class Condenter(object):
 
 
 def dict_literal(
-    start, left_delimiter, items, right_delimiter,
-    separator=" : ", trailing_comma=True,
+    start, left_delimiter, items, right_delimiter, trailing_comma=True,
 ):
     return container_literal(
         start, left_delimiter, items, right_delimiter, trailing_comma,
