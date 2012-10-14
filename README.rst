@@ -73,6 +73,11 @@ found one that worked right. Maybe it exists and it's my (settings') fault,
 but rather than figure out whether that's the case it was easy enough to throw
 together in an afternoon.
 
+You also might be interested in my ``ftplugin`` file for `Python
+<https://github.com/Julian/dotfiles/blob/master/.vim/ftplugin/python.vim>`_
+which has some more of what I do with this, like auto-reindenting when
+inserting closing characters.
+
 
 Style
 -----
