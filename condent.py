@@ -132,21 +132,37 @@ class Condenter(object):
     def visit_dict(self, start, left_delimiter, items, right_delimiter):
         separator = " : " if self.config.symmetric_colons else ": "
         return dict_literal(
-            start, left_delimiter, items, right_delimiter, separator=separator
+            start,
+            left_delimiter,
+            items,
+            right_delimiter,
+            separator=separator,
+            trailing_comma=self.config.trailing_comma,
         )
 
     def visit_sequence(self, start, left_delimiter, items, right_delimiter):
-        return container_literal(start, left_delimiter, items, right_delimiter)
+        return container_literal(
+            start,
+            left_delimiter,
+            items,
+            right_delimiter,
+            self.config.trailing_comma,
+        )
 
 
 def dict_literal(
-    start, left_delimiter, items, right_delimiter, separator=" : ",
+    start, left_delimiter, items, right_delimiter,
+    separator=" : ", trailing_comma=True,
 ):
     cleaned = _clean_dict_items(items, separator)
-    return container_literal(start, left_delimiter, cleaned, right_delimiter)
+    return container_literal(
+        start, left_delimiter, cleaned, right_delimiter, trailing_comma,
+    )
 
 
-def container_literal(start, left_delimiter, items, right_delimiter):
+def container_literal(
+    start, left_delimiter, items, right_delimiter, trailing_comma=True,
+):
     start = _clean_start(start)
     items = list(_clean_sequence_items(items))
 
@@ -154,7 +170,9 @@ def container_literal(start, left_delimiter, items, right_delimiter):
     if len(c) <= 79:
         return c
 
-    return _multi_line_container(start, left_delimiter, items, right_delimiter)
+    return _multi_line_container(
+        start, left_delimiter, items, right_delimiter, trailing_comma,
+    )
 
 
 def _clean_start(start):
@@ -198,14 +216,17 @@ def _single_line_container(start, left_delimiter, items, right_delimiter):
     return "".join([start, left_delimiter, joined, right_delimiter])
 
 
-def _multi_line_container(start, left_delimiter, items, right_delimiter):
+def _multi_line_container(
+    start, left_delimiter, items, right_delimiter, trailing_comma,
+):
+    trailing = "," if trailing_comma else ""
     indent = _indent_for(start)
     items = _multi_line_items(items, indent)
     return "{start}{left}\n{items}{trailing}\n{indent}{right}".format(
         start=start,
         left=left_delimiter,
         items=items,
-        trailing=",",
+        trailing=trailing,
         indent=indent,
         right=right_delimiter,
     )
