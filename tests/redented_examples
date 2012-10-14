@@ -188,3 +188,7 @@ d = foo(
                                                                             4,
                                                                         ]
 ---
+                            the_dict = {
+                                "foo" : "bar", "baz" : "quux", "spam" : "eggs",
+                            }
+---

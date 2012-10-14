@@ -131,3 +131,6 @@ d = foo("foo","bar", "baz","quux", "spam","eggs", "other","thing",
 ---
                                                                         d = [1, 2, 3, 4]
 ---
+                            the_dict = {"foo" : "bar", "baz" : "quux",
+"spam" : "eggs",}
+---

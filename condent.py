@@ -23,10 +23,14 @@ class Condenter(object):
 
         """
 
-        for line in lines:
-            for redented in self.visit(line):
-                yield redented
-        yield self.done()
+        try:
+            for line in lines:
+                for redented in self.visit(line):
+                    yield redented
+        except ValueError:
+            pass
+        finally:
+            yield self.done()
 
     def visit(self, line):
         """
@@ -191,9 +195,23 @@ def _single_line_container(start, left_delimiter, items, right_delimiter):
 
 def _multi_line_container(start, left_delimiter, items, right_delimiter):
     indent = _indent_for(start)
-    items = ",\n".join(indent + "    " + item for item in items) + ","
-    end = indent + right_delimiter
-    return "\n".join([start + left_delimiter, items, end])
+    items = _multi_line_items(items, indent)
+    return "{start}{left}\n{items}{trailing}\n{indent}{right}".format(
+        start=start,
+        left=left_delimiter,
+        items=items,
+        trailing=",",
+        indent=indent,
+        right=right_delimiter,
+    )
+
+
+def _multi_line_items(items, indent):
+    indent += "    "
+    line = indent + ", ".join(items)
+    if len(line) <= 79:
+        return line
+    return ",\n".join(indent + item for item in items)
 
 
 def find_delimiters(delimiters, line):
