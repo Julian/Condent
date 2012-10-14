@@ -1,3 +1,5 @@
 include *.rst
 include COPYING
-include tests.py
+include tests/examples
+include tests/redented_examples
+include tests/*.py

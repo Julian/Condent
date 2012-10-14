@@ -2,7 +2,7 @@ import itertools
 import re
 
 
-__version__ = "0.2"
+__version__ = "0.2.1"
 
 
 class Condenter(object):
