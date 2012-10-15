@@ -204,35 +204,40 @@ def _sequence_item(item):
     return item.strip()
 
 
-def _single_line_container(start, left_delimiter, items, right_delimiter):
-    joined = ", ".join(items).rstrip(",")
-    if is_tuple(start, left_delimiter) and len(items) == 1:
-        joined += ","
-    return "".join([start, left_delimiter, joined, right_delimiter])
+def _single_line_container(start, left_delimiter, itms, right_delimiter):
+    itms = items(start, left_delimiter, itms)
+    return "".join([start, left_delimiter, itms, right_delimiter])
 
 
 def _multi_line_container(
-    start, left_delimiter, items, right_delimiter, trailing_comma,
+    start, left_delimiter, itms, right_delimiter, trailing_comma,
 ):
-    trailing = "," if trailing_comma else ""
     indent = _indent_for(start)
-    items = _multi_line_items(items, indent)
-    return "{start}{left}\n{items}{trailing}\n{indent}{right}".format(
+    itms = items(start, left_delimiter, itms, trailing_comma)
+
+    if len(itms) < 79:
+        itms = indent + "    " + itms + ","
+
+    return "{start}{left}\n{items}\n{indent}{right}".format(
         start=start,
         left=left_delimiter,
-        items=items,
-        trailing=trailing,
+        items=itms,
         indent=indent,
         right=right_delimiter,
     )
 
 
-def _multi_line_items(items, indent):
-    indent += "    "
-    line = indent + ", ".join(items)
-    if len(line) <= 79:
-        return line
-    return ",\n".join(indent + item for item in items)
+def items(start, left_delimiter, items, trailing_comma=True):
+    indent = "    " + _indent_for(start)
+    trailing = "," if trailing_comma else ""
+    joined = ", ".join(items)
+
+    if is_tuple(start, left_delimiter) and len(items) == 1:
+        joined += ","
+
+    if len(indent + joined) > 79:
+        joined = ",\n".join(indent + item for item in items) + trailing
+    return joined
 
 
 def find_delimiters(delimiters, line):
