@@ -240,6 +240,47 @@ def items(start, left_delimiter, items, trailing_comma=True):
     return joined
 
 
+class ParsesDelimiters(object):
+    def __init__(self, delimiters):
+        self.buffer = []
+        self.delimiters = delimiters
+        self.in_string = False
+
+    def _parse(self, line):
+        for c in line:
+            if self.in_string:
+                yield self.see_in_string(c)
+            else:
+                for result in self.see(c):
+                    yield result
+        yield self.empty_buffer()
+
+    def parse(self, line):
+        return (result for result in self._parse(line) if result is not None)
+
+    def see(self, c):
+        if c in self.delimiters:
+            yield self.empty_buffer()
+            yield c
+        else:
+            self.buffer.append(c)
+
+            if c in """"'""":
+                self.in_string = True
+
+    def see_in_string(self, c):
+        if c in """"'""":
+            self.in_string = False
+        self.buffer.append(c)
+
+    def empty_buffer(self):
+        if self.buffer:
+            try:
+                return "".join(self.buffer)
+            finally:
+                self.buffer = []
+
+
 def find_delimiters(delimiters, line):
     """
     Partition the line using the given delimiters.

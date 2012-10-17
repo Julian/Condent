@@ -115,6 +115,47 @@ class TestMultiLineItems(TestCase, PatchMixin):
         self.assertEqual(items, "    " + ",\n    ".join(self.items))
 
 
+class TestParsesDelimiters(TestCase):
+    def setUp(self):
+        self.parser = condent.ParsesDelimiters("[]")
+
+    def test_it_splits_a_line_with_a_delimeter(self):
+        source = "foo = [1"
+        self.assertEqual(
+            list(self.parser.parse(source)),
+            ["foo = ", "[", "1"],
+        )
+
+    def test_it_splits_a_line_with_an_open_and_close_delimeter(self):
+        source = "foo = [1, 2]"
+        self.assertEqual(
+            list(self.parser.parse(source)),
+            ["foo = ", "[", "1, 2", "]"],
+        )
+
+    def test_it_splits_a_line_with_multiple_delimiters(self):
+        source = "foo = [1, [2]]"
+        self.assertEqual(
+            list(self.parser.parse(source)),
+            ["foo = ", "[", "1, ", "[", "2", "]", "]"],
+        )
+
+    def test_it_does_not_split_delimiters_in_strings(self):
+        source = "foo = [1, '[2]]', \"[[3]]\"]"
+        self.assertEqual(
+            list(self.parser.parse(source)),
+            ["foo = ", "[", "1, '[2]]', \"[[3]]\"", "]"],
+        )
+
+    def test_it_does_not_split_multi_line_strings(self):
+        source = 'foo = ["""[1]""", \'\'\'[4]\'\'\']'
+        self.assertEqual(
+            list(self.parser.parse(source)),
+            ["foo = ", "[", '"""[1]""", \'\'\'[4]\'\'\'', "]"],
+        )
+
+
+
 class TestCondenter(TestCase):
     def setUp(self):
         self.config = mock.Mock()
@@ -164,9 +205,6 @@ class TestCondenter(TestCase):
         self.assertRedents(source, source)
 
 #     def test_it_does_not_split_tuple_assignment(self):
-#         pass
-# 
-#     def test_it_does_not_split_string_literals(self):
 #         pass
 # 
 #     def test_it_combines_args_that_fit_on_one_line(self):
