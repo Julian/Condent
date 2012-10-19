@@ -10,9 +10,6 @@ DELIMITERS = {"{" : "}", "[" : "]", "(" : ")"}
 
 
 class Condenter(object):
-
-    visitors = {"}" : "brace", "]" : "sequence", ")" : "sequence"}
-
     def __init__(self, builder, config):
         self.builder = builder
         self.config = config
@@ -28,8 +25,9 @@ class Condenter(object):
 
         for line in tokened_lines:
             for token in line:
-                self.visit(token)
-        return [1, 2, 3]
+                output = self.visit(token)
+                if output is not None:
+                    yield output
 
     def visit(self, token):
         """
@@ -84,7 +82,7 @@ class Condenter(object):
 
 
 class LiteralBuilder(object):
-    def build(self, start, left_delimiter, item_tokens, right_delimiter):
+    def build(self, before, left_delimiter, item_tokens, right_delimiter):
         pass
 
     def build_brace(self, *args):
@@ -93,19 +91,19 @@ class LiteralBuilder(object):
         else:
             return self.build_sequence(*args)
 
-    def build_dict(self, start, left_delimiter, items, right_delimiter):
+    def build_dict(self, before, left_delimiter, items, right_delimiter):
         separator = " : " if self.config.symmetric_colons else ": "
         return dict_literal(
-            start,
+            before,
             left_delimiter,
             _clean_dict_items(items, separator),
             right_delimiter,
             trailing_comma=self.config.trailing_comma,
         )
 
-    def build_sequence(self, start, left_delimiter, items, right_delimiter):
+    def build_sequence(self, before, left_delimiter, items, right_delimiter):
         return container_literal(
-            start,
+            before,
             left_delimiter,
             _clean_sequence_items(items),
             right_delimiter,
@@ -114,34 +112,34 @@ class LiteralBuilder(object):
 
 
 def dict_literal(
-    start, left_delimiter, items, right_delimiter, trailing_comma=True,
+    before, left_delimiter, items, right_delimiter, trailing_comma=True,
 ):
     return container_literal(
-        start, left_delimiter, items, right_delimiter, trailing_comma,
+        before, left_delimiter, items, right_delimiter, trailing_comma,
     )
 
 
 def container_literal(
-    start, left_delimiter, items, right_delimiter, trailing_comma=True,
+    before, left_delimiter, items, right_delimiter, trailing_comma=True,
 ):
-    start = _clean_start(start)
+    before = _clean_before(before)
     items = list(items)
 
-    c = _single_line_container(start, left_delimiter, items, right_delimiter)
+    c = _single_line_container(before, left_delimiter, items, right_delimiter)
     if len(c) <= 79:
         return c
 
     return _multi_line_container(
-        start, left_delimiter, items, right_delimiter, trailing_comma,
+        before, left_delimiter, items, right_delimiter, trailing_comma,
     )
 
 
-def _clean_start(start):
-    return re.sub("\s*=\s*$", " = ", start)
+def _clean_before(before):
+    return re.sub("\s*=\s*$", " = ", before)
 
 
-def _indent_for(start):
-    indent = len(start) - len(start.lstrip(" "))
+def _indent_for(before):
+    indent = len(before) - len(before.lstrip(" "))
     return indent * " "
 
 
@@ -170,22 +168,22 @@ def _sequence_item(item):
     return item.strip()
 
 
-def _single_line_container(start, left_delimiter, itms, right_delimiter):
-    itms = items(start, left_delimiter, itms)
-    return "".join([start, left_delimiter, itms, right_delimiter])
+def _single_line_container(before, left_delimiter, itms, right_delimiter):
+    itms = items(before, left_delimiter, itms)
+    return "".join([before, left_delimiter, itms, right_delimiter])
 
 
 def _multi_line_container(
-    start, left_delimiter, itms, right_delimiter, trailing_comma,
+    before, left_delimiter, itms, right_delimiter, trailing_comma,
 ):
-    indent = _indent_for(start)
-    itms = items(start, left_delimiter, itms, trailing_comma)
+    indent = _indent_for(before)
+    itms = items(before, left_delimiter, itms, trailing_comma)
 
     if len(itms) < 79:
         itms = indent + "    " + itms + ","
 
-    return "{start}{left}\n{items}\n{indent}{right}".format(
-        start=start,
+    return "{before}{left}\n{items}\n{indent}{right}".format(
+        before=before,
         left=left_delimiter,
         items=itms,
         indent=indent,
@@ -193,11 +191,11 @@ def _multi_line_container(
     )
 
 
-def items(start, left_delimiter, items, trailing_comma=True):
-    indent = "    " + _indent_for(start)
+def items(before, left_delimiter, items, trailing_comma=True):
+    indent = "    " + _indent_for(before)
     joined = ", ".join(items)
 
-    if is_tuple(start, left_delimiter) and len(items) == 1:
+    if is_tuple(before, left_delimiter) and len(items) == 1:
         joined += ","
 
     if len(indent + joined) > 79:
@@ -288,10 +286,10 @@ class ParsesDelimiters(object):
                 self.buffer = []
 
 
-def is_tuple(start, left_delimiter):
-    _, __, callable = start.rpartition(" ")
+def is_tuple(before, left_delimiter):
+    _, __, callable = before.rpartition(" ")
     return not callable and left_delimiter == "("
 
 
-def is_dict(start, left_delimiter, context, right_delimiter):
+def is_dict(before, left_delimiter, context, right_delimiter):
     return any(":" in line for line in context)

@@ -141,13 +141,16 @@ class TestCondenter(TestCase):
 
     def test_it_visits_tokens(self):
         tokens = [[mock.Mock()], [mock.Mock(), mock.Mock()]]
-        output = iter([1, 2, 3])
-        visit = self.patchObject(self.condenter, "visit", return_value=output)
+        output = iter([1, None, 3])
+        visit = self.patchObject(self.condenter, "visit", side_effect=output)
 
         got = self.condenter.redent(tokens)
 
-        self.assertEqual(list(got), [1, 2, 3])
-        self.assertEqual(visit.call_count, 3)
+        self.assertEqual(list(got), [1, 3])
+        self.assertEqual(
+            visit.mock_calls,
+            [mock.call(token) for token in sum(tokens, [])]
+        )
 
     def test_it_visits_tokens_by_class(self):
         token = mock.Mock()
