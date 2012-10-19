@@ -76,7 +76,7 @@ class Condenter(object):
         return self.builder.build(
             left_token.before,
             left_token.delimiter,
-            (item.content for item in item_tokens),
+            [item.content for item in item_tokens],
             right_token.delimiter,
         )
 

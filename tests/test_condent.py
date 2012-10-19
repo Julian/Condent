@@ -172,12 +172,8 @@ class TestCondenter(TestCase):
         self.builder.build.assert_called_once_with(
             left_token.before,
             left_token.delimiter,
-            mock.ANY,  # items generator
-            right_token.delimiter,
-        )
-        self.assertEqual(
-            list(self.builder.build.call_args[0][2]),
             [item.content for item in items],
+            right_token.delimiter,
         )
 
     def test_it_descends_into_the_stack_for_left_delimiters(self):
