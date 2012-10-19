@@ -2,7 +2,7 @@
 import argparse
 import sys
 
-from condent import Condenter
+import condent
 
 
 parser = argparse.ArgumentParser(
@@ -48,8 +48,14 @@ parser.add_argument(
 
 
 arguments = parser.parse_args()
-condenter = Condenter(arguments)
+builder = condent.LiteralBuilder(config=arguments)
+condenter = condent.Condenter(builder, config=arguments)
+
+left, right = condent.DELIMITERS.keys(), condent.DELIMITERS.values()
+p = condent.ParsesDelimiters(left + right)
 
 for file in arguments.input:
     with file:
-        arguments.output.writelines(condenter.redent(file))
+        parsed = (p.parse(line) for line in file)
+        tokens = (condent.tokenize(line, left, right) for line in parsed)
+        arguments.output.writelines(condenter.redent(tokens))
