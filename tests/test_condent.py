@@ -137,10 +137,7 @@ class TestCondenter(TestCase):
     def setUp(self):
         self.builder = mock.Mock()
         self.config = mock.Mock()
-        self.delimiters = {"<" : ">"}
-        self.condenter = condent.Condenter(
-            self.builder, self.config, self.delimiters,
-        )
+        self.condenter = condent.Condenter(self.builder, self.config)
 
     def test_it_visits_tokens(self):
         tokens = [[mock.Mock()], [mock.Mock(), mock.Mock()]]
@@ -152,48 +149,44 @@ class TestCondenter(TestCase):
         self.assertEqual(list(got), [1, 2, 3])
         self.assertEqual(visit.call_count, 3)
 
-    def test_it_visits_left_delimiters(self):
-        enter = self.patchObject(self.condenter, "enter_container")
-        self.condenter.visit("<")
-        enter.assert_called_once_with("<")
+    def test_it_visits_tokens_by_class(self):
+        token = mock.Mock()
+        visit = "visit_{0.__class__.__name__}".format(token)
+        visitor = self.patchObject(self.condenter, visit, create=True)
 
-    def test_it_visits_right_delimiters(self):
-        exit = self.patchObject(self.condenter, "exit_container")
-        self.condenter.visit(">")
-        exit.assert_called_once_with(">")
+        self.condenter.visit(token)
 
-    def test_it_visits_non_delimiters(self):
-        visit = self.patchObject(self.condenter, "visit_non_delimiter")
-        self.condenter.visit("foo bar baz")
-        visit.assert_called_once_with("foo bar baz")
+        visitor.assert_called_once_with(token)
 
     def test_it_builds_a_literal_when_exiting_containers(self):
-        start, left_delimiter, tokens = mock.Mock(), mock.Mock(), mock.Mock()
-        stack = self.patchObject(self.condenter, "stack")
-        stack.pop.return_value = start, left_delimiter, tokens
+        left_token, items = mock.Mock(), mock.Mock()
+        self.patchObject(self.condenter, "stack", [(left_token, items)])
 
-        right_delimiter = mock.Mock()
-        output = self.condenter.exit_container(right_delimiter)
+        right_token = mock.Mock()
+        output = self.condenter.visit_RightDelimiter(right_token)
 
         self.assertEqual(output, self.builder.build.return_value)
         self.builder.build.assert_called_once_with(
-            start, left_delimiter, tokens, right_delimiter,
+            left_token.before,
+            left_token.delimiter,
+            items,
+            right_token.delimiter,
         )
 
     def test_it_saves_non_delimited_lines_inside_containers(self):
-        start, delim, tokens = mock.Mock(), mock.Mock(), []
-        self.patchObject(self.condenter, "stack", [(start, delim, tokens)])
+        left_token, items = mock.Mock(), []
+        self.patchObject(self.condenter, "stack", [(left_token, items)])
 
         token = mock.Mock()
-        output = self.condenter.visit_non_delimiter(token)
+        output = self.condenter.visit_NonDelimiter(token)
 
-        self.assertEqual(tokens, [token])
+        self.assertEqual(items, [token])
         self.assertIsNone(output)
 
     def test_it_yields_non_delimited_lines_outside_containers_unchanged(self):
-        stack = self.patchObject(self.condenter, "stack", [])
+        self.patchObject(self.condenter, "stack", [])
         token = mock.Mock()
-        output = self.condenter.visit_non_delimiter(token)
+        output = self.condenter.visit_NonDelimiter(token)
         self.assertEqual(list(output), [token])
 
     def test_it_can_fix_spaces_around_colons_non_symmetrically(self):

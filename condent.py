@@ -13,10 +13,9 @@ class Condenter(object):
 
     visitors = {"}" : "brace", "]" : "sequence", ")" : "sequence"}
 
-    def __init__(self, builder, config, delimiters=DELIMITERS):
+    def __init__(self, builder, config):
         self.builder = builder
         self.config = config
-        self.delimiters = delimiters
         self.stack = []
 
     def redent(self, tokened_lines):
@@ -41,14 +40,9 @@ class Condenter(object):
 
         """
 
-        if token in self.delimiters:
-            self.enter_container(token)
-        elif token in self.delimiters.values():
-            self.exit_container(token)
-        else:
-            self.visit_non_delimiter(token)
+        getattr(self, "visit_" + token.__class__.__name__)(token)
 
-    def enter_container(self, start, delimiter, end):
+    def visit_LeftDelimiter(self, token):
         """
         A left delimiter was encountered.
 
@@ -58,7 +52,7 @@ class Condenter(object):
         if end:
             return self.visit(end)
 
-    def visit_non_delimiter(self, token):
+    def visit_NonDelimiter(self, token):
         """
         A token that is not a delimiter was encountered.
 
@@ -71,10 +65,10 @@ class Condenter(object):
         if not self.stack:
             return [token]
 
-        item_tokens = self.stack[-1][2]
+        item_tokens = self.stack[-1][1]
         item_tokens.append(token)
 
-    def exit_container(self, delimiter):
+    def visit_RightDelimiter(self, right_token):
         """
         A right delimiter was encountered.
 
@@ -82,8 +76,13 @@ class Condenter(object):
 
         """
 
-        start, left_delimiter, item_toks = self.stack.pop()
-        return self.builder.build(start, left_delimiter, item_toks, delimiter)
+        left_token, item_tokens = self.stack.pop()
+        return self.builder.build(
+            left_token.before,
+            left_token.delimiter,
+            item_tokens,
+            right_token.delimiter,
+        )
 
     def done(self):
         """
