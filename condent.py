@@ -38,7 +38,7 @@ class Condenter(object):
 
         """
 
-        getattr(self, "visit_" + token.__class__.__name__)(token)
+        return getattr(self, "visit_" + token.__class__.__name__)(token)
 
     def visit_LeftDelimiter(self, token):
         """
@@ -59,7 +59,7 @@ class Condenter(object):
         """
 
         if not self.stack:
-            return [token]
+            return token.content
 
         item_tokens = self.stack[-1][1]
         item_tokens.append(token)

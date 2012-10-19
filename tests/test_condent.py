@@ -157,9 +157,9 @@ class TestCondenter(TestCase):
         visit = "visit_{0.__class__.__name__}".format(token)
         visitor = self.patchObject(self.condenter, visit, create=True)
 
-        self.condenter.visit(token)
+        output = self.condenter.visit(token)
 
-        visitor.assert_called_once_with(token)
+        self.assertEqual(output, visitor.return_value)
 
     def test_it_builds_a_literal_when_exiting_containers(self):
         left_token, items = mock.Mock(), mock.Mock()
@@ -195,7 +195,7 @@ class TestCondenter(TestCase):
     def test_it_yields_non_delimited_lines_outside_containers_unchanged(self):
         token = mock.Mock()
         output = self.condenter.visit_NonDelimiter(token)
-        self.assertEqual(list(output), [token])
+        self.assertEqual(output, token.content)
 
     def test_it_can_fix_spaces_around_colons_non_symmetrically(self):
         pass
