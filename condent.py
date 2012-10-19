@@ -76,14 +76,22 @@ class Condenter(object):
         return self.builder.build(
             left_token.before,
             left_token.delimiter,
-            item_tokens,
+            (item.content for item in item_tokens),
             right_token.delimiter,
         )
 
 
 class LiteralBuilder(object):
-    def build(self, before, left_delimiter, item_tokens, right_delimiter):
-        pass
+    def __init__(self, config, builders=None):
+        if builders is None:
+            builders = {"{" : "brace", "[" : "sequence", "(" : "sequence"}
+
+        self.builders = builders
+        self.config = config
+
+    def build(self, before, left_delimiter, items, right_delimiter):
+        builder = getattr(self, "build_" + self.builders[left_delimiter])
+        return builder(before, left_delimiter, items, right_delimiter)
 
     def build_brace(self, *args):
         if is_dict(*args):

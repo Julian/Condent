@@ -162,7 +162,7 @@ class TestCondenter(TestCase):
         self.assertEqual(output, visitor.return_value)
 
     def test_it_builds_a_literal_when_exiting_containers(self):
-        left_token, items = mock.Mock(), mock.Mock()
+        left_token, items = mock.Mock(), [mock.Mock(), mock.Mock()]
         self.condenter.stack.append((left_token, items))
 
         right_token = mock.Mock()
@@ -172,8 +172,12 @@ class TestCondenter(TestCase):
         self.builder.build.assert_called_once_with(
             left_token.before,
             left_token.delimiter,
-            items,
+            mock.ANY,  # items generator
             right_token.delimiter,
+        )
+        self.assertEqual(
+            list(self.builder.build.call_args[0][2]),
+            [item.content for item in items],
         )
 
     def test_it_descends_into_the_stack_for_left_delimiters(self):
@@ -210,11 +214,23 @@ class TestCondenter(TestCase):
         pass
 
 
-class DictLiteral(TestCase):
+class TestLiteralBuilder(TestCase):
     def setUp(self):
-        patch = mock.patch.object(condent, "items")
-        self.items = patch.start()
-        self.addCleanup(patch.stop)
+        self.config = mock.Mock()
+
+    def test_it_has_default_builders_for_delimiters(self):
+        b = condent.LiteralBuilder(self.config)
+        self.assertEqual(
+            b.builders, {"{" : "brace", "[" : "sequence", "(" : "sequence"},
+        )
+    def test_it_builds_things(self):
+        self.patchObject(condent.LiteralBuilder, "build_angle", create=True)
+        args = before, L, items, R = mock.Mock(), "<", mock.Mock(), mock.Mock()
+
+        builder = condent.LiteralBuilder(self.config, {"<" : "angle"})
+        builder.build(*args)
+
+        builder.build_angle.assert_called_once_with(*args)
 
 
 class TestSingleLineItems(TestCase):
