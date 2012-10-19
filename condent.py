@@ -48,9 +48,7 @@ class Condenter(object):
 
         """
 
-        self.stack.append((start, delimiter))
-        if end:
-            return self.visit(end)
+        self.stack.append((token, []))
 
     def visit_NonDelimiter(self, token):
         """
@@ -83,18 +81,6 @@ class Condenter(object):
             item_tokens,
             right_token.delimiter,
         )
-
-    def done(self):
-        """
-        You ain't gots to go home, but you got to get the hell up outta here.
-
-        The end of the input was reached. Who knows what is half-parsed, but
-        it's gotta be shipped, now.
-
-        """
-
-        result = "".join(start + d for start, d in reversed(self.stack))
-        return result + "".join(self.context)
 
 
 class LiteralBuilder(object):

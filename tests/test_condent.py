@@ -160,7 +160,7 @@ class TestCondenter(TestCase):
 
     def test_it_builds_a_literal_when_exiting_containers(self):
         left_token, items = mock.Mock(), mock.Mock()
-        self.patchObject(self.condenter, "stack", [(left_token, items)])
+        self.condenter.stack.append((left_token, items))
 
         right_token = mock.Mock()
         output = self.condenter.visit_RightDelimiter(right_token)
@@ -173,9 +173,15 @@ class TestCondenter(TestCase):
             right_token.delimiter,
         )
 
+    def test_it_descends_into_the_stack_for_left_delimiters(self):
+        left_token = mock.Mock()
+        output = self.condenter.visit_LeftDelimiter(left_token)
+        self.assertEqual(self.condenter.stack, [(left_token, [])])
+        self.assertIsNone(output)
+
     def test_it_saves_non_delimited_lines_inside_containers(self):
         left_token, items = mock.Mock(), []
-        self.patchObject(self.condenter, "stack", [(left_token, items)])
+        self.condenter.stack.append((left_token, items))
 
         token = mock.Mock()
         output = self.condenter.visit_NonDelimiter(token)
@@ -184,7 +190,6 @@ class TestCondenter(TestCase):
         self.assertIsNone(output)
 
     def test_it_yields_non_delimited_lines_outside_containers_unchanged(self):
-        self.patchObject(self.condenter, "stack", [])
         token = mock.Mock()
         output = self.condenter.visit_NonDelimiter(token)
         self.assertEqual(list(output), [token])
