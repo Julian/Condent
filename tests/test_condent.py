@@ -1,10 +1,7 @@
 from functools import wraps
 from textwrap import dedent
 from unittest import TestCase
-
 import mock
-
-import condent
 
 
 def _cleanUpPatch(fn):
@@ -16,10 +13,200 @@ def _cleanUpPatch(fn):
     return cleaned
 
 
-class PatchMixin(object):
+class TestCase(TestCase):
     patch = _cleanUpPatch(mock.patch)
     patchDict = _cleanUpPatch(mock.patch.dict)
     patchObject = _cleanUpPatch(mock.patch.object)
+
+
+import condent
+
+
+class TestTokenize(TestCase):
+    def setUp(self):
+        self.left_delims = set("<")
+        self.right_delims = set(">")
+
+    def test_it_creates_non_delimiter_tokens(self):
+        content = mock.Mock()
+        parsed = iter([content])
+
+        tokens = condent.tokenize(parsed, self.left_delims, self.right_delims)
+
+        self.assertEqual(
+            list(tokens), [
+                condent.NonDelimiter(content=content),
+            ]
+        )
+
+    def test_it_creates_left_delimiter_tokens(self):
+        content = mock.Mock()
+        parsed = iter(["<", content])
+
+        tokens = condent.tokenize(parsed, self.left_delims, self.right_delims)
+
+        self.assertEqual(
+            list(tokens), [
+                condent.LeftDelimiter(before="", delimiter="<"),
+                condent.NonDelimiter(content=content),
+            ]
+        )
+
+    def test_it_creates_left_delimiter_tokens_with_before(self):
+        before, content = mock.Mock(), mock.Mock()
+        parsed = iter([before, "<", content])
+
+        tokens = condent.tokenize(parsed, self.left_delims, self.right_delims)
+
+        self.assertEqual(
+            list(tokens), [
+                condent.LeftDelimiter(before=before, delimiter="<"),
+                condent.NonDelimiter(content=content),
+            ]
+        )
+
+    def test_it_creates_right_delimiter_tokens(self):
+        one, another = mock.Mock(), mock.Mock()
+        parsed = iter([one, ">", another])
+
+        tokens = condent.tokenize(parsed, self.left_delims, self.right_delims)
+
+        self.assertEqual(
+            list(tokens), [
+                condent.NonDelimiter(content=one),
+                condent.RightDelimiter(delimiter=">"),
+                condent.NonDelimiter(content=another),
+            ]
+        )
+
+
+class TestIShouldKnowNotToUseNamedTupleByNow(TestCase):
+    def test_tokens_of_different_classes_are_not_equal(self):
+        # see http://bugs.python.org/issue16279
+        self.assertFalse(
+            condent.NonDelimiter(content=12) ==
+            condent.RightDelimiter(delimiter=12)
+        )
+        self.assertNotEqual(
+            condent.NonDelimiter(content=12),
+            condent.RightDelimiter(delimiter=12),
+        )
+
+
+class TestParsesDelimiters(TestCase):
+    def setUp(self):
+        self.parser = condent.ParsesDelimiters("[]")
+
+    def test_it_splits_a_line_with_a_delimeter(self):
+        source = "foo = [1"
+        self.assertEqual(
+            list(self.parser.parse(source)),
+            ["foo = ", "[", "1"],
+        )
+
+    def test_it_splits_a_line_with_an_open_and_close_delimeter(self):
+        source = "foo = [1, 2]"
+        self.assertEqual(
+            list(self.parser.parse(source)),
+            ["foo = ", "[", "1, 2", "]"],
+        )
+
+    def test_it_splits_a_line_with_multiple_delimiters(self):
+        source = "foo = [1, [2]]"
+        self.assertEqual(
+            list(self.parser.parse(source)),
+            ["foo = ", "[", "1, ", "[", "2", "]", "]"],
+        )
+
+    def test_it_does_not_split_delimiters_in_strings(self):
+        source = "foo = [1, '[2]]', \"[[3]]\"]"
+        self.assertEqual(
+            list(self.parser.parse(source)),
+            ["foo = ", "[", "1, '[2]]', \"[[3]]\"", "]"],
+        )
+
+    def test_it_does_not_split_multi_line_strings(self):
+        source = 'foo = ["""[1]""", \'\'\'[4]\'\'\']'
+        self.assertEqual(
+            list(self.parser.parse(source)),
+            ["foo = ", "[", '"""[1]""", \'\'\'[4]\'\'\'', "]"],
+        )
+
+
+class TestCondenter(TestCase):
+    def setUp(self):
+        self.builder = mock.Mock()
+        self.config = mock.Mock()
+        self.delimiters = {"<" : ">"}
+        self.condenter = condent.Condenter(
+            self.builder, self.config, self.delimiters,
+        )
+
+    def test_it_visits_tokens(self):
+        tokens = [[mock.Mock()], [mock.Mock(), mock.Mock()]]
+        output = iter([1, 2, 3])
+        visit = self.patchObject(self.condenter, "visit", return_value=output)
+
+        got = self.condenter.redent(tokens)
+
+        self.assertEqual(list(got), [1, 2, 3])
+        self.assertEqual(visit.call_count, 3)
+
+    def test_it_visits_left_delimiters(self):
+        enter = self.patchObject(self.condenter, "enter_container")
+        self.condenter.visit("<")
+        enter.assert_called_once_with("<")
+
+    def test_it_visits_right_delimiters(self):
+        exit = self.patchObject(self.condenter, "exit_container")
+        self.condenter.visit(">")
+        exit.assert_called_once_with(">")
+
+    def test_it_visits_non_delimiters(self):
+        visit = self.patchObject(self.condenter, "visit_non_delimiter")
+        self.condenter.visit("foo bar baz")
+        visit.assert_called_once_with("foo bar baz")
+
+    def test_it_builds_a_literal_when_exiting_containers(self):
+        start, left_delimiter, tokens = mock.Mock(), mock.Mock(), mock.Mock()
+        stack = self.patchObject(self.condenter, "stack")
+        stack.pop.return_value = start, left_delimiter, tokens
+
+        right_delimiter = mock.Mock()
+        output = self.condenter.exit_container(right_delimiter)
+
+        self.assertEqual(output, self.builder.build.return_value)
+        self.builder.build.assert_called_once_with(
+            start, left_delimiter, tokens, right_delimiter,
+        )
+
+    def test_it_saves_non_delimited_lines_inside_containers(self):
+        start, delim, tokens = mock.Mock(), mock.Mock(), []
+        self.patchObject(self.condenter, "stack", [(start, delim, tokens)])
+
+        token = mock.Mock()
+        output = self.condenter.visit_non_delimiter(token)
+
+        self.assertEqual(tokens, [token])
+        self.assertIsNone(output)
+
+    def test_it_yields_non_delimited_lines_outside_containers_unchanged(self):
+        stack = self.patchObject(self.condenter, "stack", [])
+        token = mock.Mock()
+        output = self.condenter.visit_non_delimiter(token)
+        self.assertEqual(list(output), [token])
+
+    def test_it_can_fix_spaces_around_colons_non_symmetrically(self):
+        pass
+
+    def test_it_can_leave_off_trailing_commas(self):
+        pass
+
+    def test_it_combines_args_that_fit_on_one_line(self):
+        pass
+
+    def test_it_is_reusable(self):
+        pass
 
 
 class DictLiteral(TestCase):
@@ -29,7 +216,7 @@ class DictLiteral(TestCase):
         self.addCleanup(patch.stop)
 
 
-class TestSingleLineItems(TestCase, PatchMixin):
+class TestSingleLineItems(TestCase):
     def setUp(self):
         self.start = ""
         self.left_delimiter = mock.Mock()
@@ -78,7 +265,7 @@ class TestSingleLineItems(TestCase, PatchMixin):
         pass
 
 
-class TestMultiLineItems(TestCase, PatchMixin):
+class TestMultiLineItems(TestCase):
     def setUp(self):
         self.items = ["a" * 39] * 2
         self.start = ""
@@ -113,99 +300,3 @@ class TestMultiLineItems(TestCase, PatchMixin):
             self.start, self.left_delimiter, self.items, trailing_comma=False,
         )
         self.assertEqual(items, "    " + ",\n    ".join(self.items))
-
-
-class TestParsesDelimiters(TestCase):
-    def setUp(self):
-        self.parser = condent.ParsesDelimiters("[]")
-
-    def test_it_splits_a_line_with_a_delimeter(self):
-        source = "foo = [1"
-        self.assertEqual(
-            list(self.parser.parse(source)),
-            ["foo = ", "[", "1"],
-        )
-
-    def test_it_splits_a_line_with_an_open_and_close_delimeter(self):
-        source = "foo = [1, 2]"
-        self.assertEqual(
-            list(self.parser.parse(source)),
-            ["foo = ", "[", "1, 2", "]"],
-        )
-
-    def test_it_splits_a_line_with_multiple_delimiters(self):
-        source = "foo = [1, [2]]"
-        self.assertEqual(
-            list(self.parser.parse(source)),
-            ["foo = ", "[", "1, ", "[", "2", "]", "]"],
-        )
-
-    def test_it_does_not_split_delimiters_in_strings(self):
-        source = "foo = [1, '[2]]', \"[[3]]\"]"
-        self.assertEqual(
-            list(self.parser.parse(source)),
-            ["foo = ", "[", "1, '[2]]', \"[[3]]\"", "]"],
-        )
-
-    def test_it_does_not_split_multi_line_strings(self):
-        source = 'foo = ["""[1]""", \'\'\'[4]\'\'\']'
-        self.assertEqual(
-            list(self.parser.parse(source)),
-            ["foo = ", "[", '"""[1]""", \'\'\'[4]\'\'\'', "]"],
-        )
-
-
-
-class TestCondenter(TestCase):
-    def setUp(self):
-        self.config = mock.Mock()
-        self.condenter = condent.Condenter(self.config)
-
-    def assertRedents(self, input, output):
-        lines = dedent(input).splitlines(True)
-        redented = self.condenter.redent(lines)
-        self.assertEqual("".join(redented), dedent(output))
-
-    def test_found_left_delimiter(self):
-        with mock.patch.dict(self.condenter.delimiters, **{"|" : "|"}):
-            line = "start|end"
-
-            with mock.patch.object(self.condenter, "enter_container") as enter:
-                self.condenter.find_left_delimiter(line)
-                enter.assert_called_once_with("start", "|", "end")
-
-    def test_did_not_find_left_delimiter(self):
-        with mock.patch.dict(self.condenter.delimiters):
-            line = "start|end"
-
-            with mock.patch.object(self.condenter, "enter_container") as enter:
-                self.condenter.find_left_delimiter(line)
-                self.assertFalse(enter.called)
-
-    def test_it_can_fix_spaces_around_colons_non_symmetrically(self):
-        self.condenter.config.symmetric_colons = False
-        source = 'd = {"foo": "bar"}'
-        self.assertRedents(source, source)
-
-    def test_it_can_leave_off_trailing_commas(self):
-        self.condenter.config.trailing_comma = False
-        source = """
-                                                            d = {
-                                                                "foo" : "bar",
-                                                                "baz" : "quux"
-                                                            }
-        """.splitlines(True)
-        self.assertEqual(
-            "".join(self.condenter.redent(source)), "".join(source)
-        )
-
-    def test_it_can_leave_off_trailing_commas_in_single_lines(self):
-        self.condenter.config.trailing_comma = False
-        source = 'd = {"foo" : "bar", "baz" : "quux"}'
-        self.assertRedents(source, source)
-
-#     def test_it_does_not_split_tuple_assignment(self):
-#         pass
-# 
-#     def test_it_combines_args_that_fit_on_one_line(self):
-#         pass

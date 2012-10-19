@@ -1,3 +1,4 @@
+from collections import namedtuple
 import itertools
 import re
 
@@ -5,46 +6,84 @@ import re
 __version__ = "0.3"
 
 
+DELIMITERS = {"{" : "}", "[" : "]", "(" : ")"}
+
+
 class Condenter(object):
 
     visitors = {"}" : "brace", "]" : "sequence", ")" : "sequence"}
-    delimiters = {"{" : "}", "[" : "]", "(" : ")"}
 
-    def __init__(self, config):
+    def __init__(self, builder, config, delimiters=DELIMITERS):
+        self.builder = builder
         self.config = config
-        self.context = []
+        self.delimiters = delimiters
         self.stack = []
 
-    def redent(self, lines):
+    def redent(self, tokened_lines):
         """
-        Redent the given iterable of lines.
+        Redent the given iterable of tokenized lines.
 
         Returns a generator which will yield redented lines.
 
         """
 
-        try:
-            for line in lines:
-                for redented in self.visit(line):
-                    yield redented
-        finally:
-            yield self.done()
+        for line in tokened_lines:
+            for token in line:
+                self.visit(token)
+        return [1, 2, 3]
 
-    def visit(self, line):
+    def visit(self, token):
         """
-        Visit a line.
+        Visit a token.
 
         Returns an iterable of redented lines that became available after
         visiting the given line.
 
         """
 
-        for delimit in (self.find_left_delimiter, self.find_right_delimiter):
-            result = delimit(line)
-            if result is not None:
-                return result
+        if token in self.delimiters:
+            self.enter_container(token)
+        elif token in self.delimiters.values():
+            self.exit_container(token)
         else:
-            return self.non_delimited(line)
+            self.visit_non_delimiter(token)
+
+    def enter_container(self, start, delimiter, end):
+        """
+        A left delimiter was encountered.
+
+        """
+
+        self.stack.append((start, delimiter))
+        if end:
+            return self.visit(end)
+
+    def visit_non_delimiter(self, token):
+        """
+        A token that is not a delimiter was encountered.
+
+        If we're inside a container, it's a line with items to be buffered
+        until the right delimiter is reached. Otherwise it's a non-container
+        line, and is returned unchanged immediately.
+
+        """
+
+        if not self.stack:
+            return [token]
+
+        item_tokens = self.stack[-1][2]
+        item_tokens.append(token)
+
+    def exit_container(self, delimiter):
+        """
+        A right delimiter was encountered.
+
+        It's time to redent and return the buffered lines.
+
+        """
+
+        start, left_delimiter, item_toks = self.stack.pop()
+        return self.builder.build(start, left_delimiter, item_toks, delimiter)
 
     def done(self):
         """
@@ -58,76 +97,18 @@ class Condenter(object):
         result = "".join(start + d for start, d in reversed(self.stack))
         return result + "".join(self.context)
 
-    def find_left_delimiter(self, line):
-        """
-        Find a left delimiter if it exists in the line.
 
-        """
+class LiteralBuilder(object):
+    def build(self, start, left_delimiter, item_tokens, right_delimiter):
+        pass
 
-        start, delimiter, end =  find_delimiters(self.delimiters, line)
-        if delimiter is not None:
-            return self.enter_container(start, delimiter, end)
-        assert end is None, "Found no left delimiter but end is: " + repr(end)
-
-    def find_right_delimiter(self, line):
-        """
-        Find a right delimiter if it exists in the line.
-
-        """
-
-        start, delimiter, end = find_delimiters(self.delimiters.values(), line)
-        if delimiter is not None:
-            return self.exit_container(start, delimiter, end)
-        assert end is None, "Found no right delimiter but end is: " + repr(end)
-
-    def enter_container(self, start, delimiter, end):
-        """
-        A left delimiter was encountered.
-
-        """
-
-        self.stack.append((start, delimiter))
-        if end:
-            return self.visit(end)
-
-    def non_delimited(self, line):
-        """
-        A line without a delimiter was encountered.
-
-        If we're inside a container, it's a line with items to be buffered
-        until the right delimiter is reached. Otherwise it's a non-container
-        line, and is returned unchanged immediately.
-
-        """
-
-        if not self.stack:
-            return [line]
-        else:
-            self.context.append(line)
-            return []
-
-    def exit_container(self, start, delimiter, end):
-        """
-        A right delimiter was encountered.
-
-        It's time to redent and return the buffered lines.
-
-        """
-
-        self.context.append(start)
-
-        visitor = getattr(self, "visit_" + self.visitors[delimiter])
-        result = visitor(*self.stack.pop() + (self.context, delimiter))
-        self.context = []
-        return itertools.chain(result, self.visit(end))
-
-    def visit_brace(self, *args):
+    def build_brace(self, *args):
         if is_dict(*args):
-            return self.visit_dict(*args)
+            return self.build_dict(*args)
         else:
-            return self.visit_sequence(*args)
+            return self.build_sequence(*args)
 
-    def visit_dict(self, start, left_delimiter, items, right_delimiter):
+    def build_dict(self, start, left_delimiter, items, right_delimiter):
         separator = " : " if self.config.symmetric_colons else ": "
         return dict_literal(
             start,
@@ -137,7 +118,7 @@ class Condenter(object):
             trailing_comma=self.config.trailing_comma,
         )
 
-    def visit_sequence(self, start, left_delimiter, items, right_delimiter):
+    def build_sequence(self, start, left_delimiter, items, right_delimiter):
         return container_literal(
             start,
             left_delimiter,
@@ -229,15 +210,56 @@ def _multi_line_container(
 
 def items(start, left_delimiter, items, trailing_comma=True):
     indent = "    " + _indent_for(start)
-    trailing = "," if trailing_comma else ""
     joined = ", ".join(items)
 
     if is_tuple(start, left_delimiter) and len(items) == 1:
         joined += ","
 
     if len(indent + joined) > 79:
-        joined = ",\n".join(indent + item for item in items) + trailing
+        trailing = "," if trailing_comma else ""
+        return ",\n".join(indent + item for item in items) + trailing
     return joined
+
+
+class Token(object):
+    def __init__(self, **kwargs):
+        for k, v in kwargs.iteritems():
+            if k not in self.fields:
+                raise TypeError(k)
+            setattr(self, k, v)
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return self._content == other._content
+
+    @property
+    def _content(self):
+        return [(k, getattr(self, k)) for k in self.fields]
+
+
+class NonDelimiter(Token): fields = ["content"]
+class LeftDelimiter(Token): fields = ["before", "delimiter"]
+class RightDelimiter(Token): fields = ["delimiter"]
+
+
+def tokenize(parsed, left_delimiters, right_delimiters):
+    first = next(parsed)
+    second = next(parsed, None)
+
+    if second is not None and second in left_delimiters:
+        yield LeftDelimiter(before=first, delimiter=second)
+        first = second = []
+    else:
+        first, second = [first], [second] if second is not None else []
+
+    for thing in itertools.chain(first, second, parsed):
+        if thing in left_delimiters:
+            yield LeftDelimiter(before="", delimiter=thing)
+        elif thing in right_delimiters:
+            yield RightDelimiter(delimiter=thing)
+        else:
+            yield NonDelimiter(content=thing)
 
 
 class ParsesDelimiters(object):
@@ -279,20 +301,6 @@ class ParsesDelimiters(object):
                 return "".join(self.buffer)
             finally:
                 self.buffer = []
-
-
-def find_delimiters(delimiters, line):
-    """
-    Partition the line using the given delimiters.
-
-    Always returns a 3-tuple of the line up until the delimiter, the delimiter,
-    and the line following the delimiter.
-
-    """
-
-    delimiter_re = "|".join(re.escape(d) for d in delimiters)
-    result = re.split("({0})".format(delimiter_re), line)
-    return tuple(result + [None] * (3 - len(result)))
 
 
 def is_tuple(start, left_delimiter):
