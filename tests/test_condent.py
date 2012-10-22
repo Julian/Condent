@@ -152,6 +152,22 @@ class TestCondenter(TestCase):
             [mock.call(token) for token in sum(tokens, [])]
         )
 
+    def test_it_empties_the_stack_when_done(self):
+        tokens = [
+            condent.LeftDelimiter(before="foo", delimiter="("),
+            condent.NonDelimiter(content="bar"),
+            condent.LeftDelimiter(before="", delimiter="("),
+            condent.NonDelimiter(content="20"),
+        ]
+
+        got = self.condenter.redent([tokens])
+
+        self.assertEqual("".join(got), "foo(bar(20")
+
+    def test_it_reformats_the_items_as_it_goes(self):
+        # TODO: e.g. foo(bar,baz(20 -> foo(bar, baz(20
+        pass
+
     def test_it_visits_tokens_by_class(self):
         token = mock.Mock()
         visit = "visit_{0.__class__.__name__}".format(token)

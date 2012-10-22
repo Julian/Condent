@@ -29,6 +29,24 @@ class Condenter(object):
                 if output is not None:
                     yield output
 
+        unprocessed = self.empty_stack()
+        if unprocessed:
+            yield unprocessed
+
+    def empty_stack(self):
+        unprocessed = []
+
+        for delimiter, items in reversed(self.stack):
+            unprocessed.append(
+                "".join([
+                    delimiter.before,
+                    delimiter.delimiter,
+                    "".join(item.content for item in items)
+                    ])
+            )
+
+        return "".join(reversed(unprocessed))
+
     def visit(self, token):
         """
         Visit a token.
