@@ -164,6 +164,23 @@ class TestCondenter(TestCase):
 
         self.assertEqual("".join(got), "foo(bar(20")
 
+    def test_it_empties_the_stack_when_partially_done(self):
+        def side_effect(before, left, items, right):
+            return before + left + "".join(items) + right
+        self.builder.build.side_effect = side_effect
+
+        tokens = [
+            condent.LeftDelimiter(before="foo", delimiter="("),
+            condent.NonDelimiter(content="bar"),
+            condent.LeftDelimiter(before="", delimiter="("),
+            condent.NonDelimiter(content="30"),
+            condent.RightDelimiter(delimiter=")"),
+        ]
+
+        got = self.condenter.redent([tokens])
+
+        self.assertEqual("".join(got), "foo(bar(30)")
+
     def test_it_reformats_the_items_as_it_goes(self):
         # TODO: e.g. foo(bar,baz(20 -> foo(bar, baz(20
         pass

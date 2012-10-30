@@ -29,11 +29,10 @@ class Condenter(object):
                 if output is not None:
                     yield output
 
-        unprocessed = self.empty_stack()
-        if unprocessed:
-            yield unprocessed
+        if self.stack:
+            yield self.reassemble()
 
-    def empty_stack(self):
+    def reassemble(self):
         unprocessed = []
 
         for delimiter, items in reversed(self.stack):
@@ -91,12 +90,13 @@ class Condenter(object):
         """
 
         left_token, item_tokens = self.stack.pop()
-        return self.builder.build(
+        redented = self.builder.build(
             left_token.before,
             left_token.delimiter,
             [item.content for item in item_tokens],
             right_token.delimiter,
         )
+        return self.visit_NonDelimiter(NonDelimiter(content=redented))
 
 
 class LiteralBuilder(object):
