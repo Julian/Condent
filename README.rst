@@ -32,7 +32,7 @@ Usage
 
 Sample invocation and output is:
 
-.. code:: console
+.. code-block:: console
 
     $ echo 'd = {"foo":"bar","baz":"quux"}' | condent 
     d = {"foo" : "bar", "baz" : "quux"}
