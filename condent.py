@@ -260,22 +260,20 @@ class RightDelimiter(Token): fields = ["delimiter"]
 
 
 def tokenize(parsed, left_delimiters, right_delimiters):
-    first = next(parsed)
-    second = next(parsed, None)
+    last = ""
 
-    if second is not None and second in left_delimiters:
-        yield LeftDelimiter(before=first, delimiter=second)
-        first = second = []
-    else:
-        first, second = [first], [second] if second is not None else []
-
-    for thing in itertools.chain(first, second, parsed):
+    for thing in parsed:
         if thing in left_delimiters:
-            yield LeftDelimiter(before="", delimiter=thing)
+            before, last = last, ""
+            yield LeftDelimiter(before=before, delimiter=thing)
         elif thing in right_delimiters:
+            yield NonDelimiter(content=last)
             yield RightDelimiter(delimiter=thing)
         else:
-            yield NonDelimiter(content=thing)
+            last = thing
+
+    if last:
+        yield NonDelimiter(content=last)
 
 
 class ParsesDelimiters(object):

@@ -168,6 +168,8 @@ foo(bar)
 ---
 foo(bar, baz)
 ---
+foo(bar, baz(quux))
+---
 d = foo(
     "foo",
     "bar",

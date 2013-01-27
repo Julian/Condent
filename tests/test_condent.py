@@ -65,6 +65,21 @@ class TestTokenize(TestCase):
             ]
         )
 
+    def test_it_creates_left_delimiter_tokens_with_before_after_rights(self):
+        before, content = mock.Mock(), mock.Mock()
+        parsed = iter([before, "<", content, ">", before.another, "<"])
+
+        tokens = condent.tokenize(parsed, self.left_delims, self.right_delims)
+
+        self.assertEqual(
+            list(tokens), [
+                condent.LeftDelimiter(before=before, delimiter="<"),
+                condent.NonDelimiter(content=content),
+                condent.RightDelimiter(delimiter=">"),
+                condent.LeftDelimiter(before=before.another, delimiter="<"),
+            ]
+        )
+
     def test_it_creates_right_delimiter_tokens(self):
         one, another = mock.Mock(), mock.Mock()
         parsed = iter([one, ">", another])
