@@ -245,6 +245,10 @@ class Token(object):
     def __ne__(self, other):
         return not self == other
 
+    def __repr__(self):
+        fields = ("{0}={1!r}".format(f, getattr(self, f)) for f in self.fields)
+        return "<{0.__class__.__name__} {1}>".format(self, " ".join(fields))
+
     @property
     def _content(self):
         return [(k, getattr(self, k)) for k in self.fields]
