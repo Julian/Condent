@@ -242,6 +242,9 @@ class Token(object):
             return NotImplemented
         return self._content == other._content
 
+    def __ne__(self, other):
+        return not self == other
+
     @property
     def _content(self):
         return [(k, getattr(self, k)) for k in self.fields]
