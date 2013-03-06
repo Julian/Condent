@@ -94,6 +94,21 @@ class TestTokenize(TestCase):
             ]
         )
 
+    def test_it_can_tokenize_repeated_right_delimiters(self):
+        parsed = iter(["foo", "<", "bar, baz", "<", "quux", ">", ">"])
+
+        tokens = condent.tokenize(parsed, self.left_delims, self.right_delims)
+
+        self.assertEqual(
+            list(tokens), [
+                condent.LeftDelimiter(before="foo", delimiter="<"),
+                condent.LeftDelimiter(before="bar, baz", delimiter="<"),
+                condent.NonDelimiter(content="quux"),
+                condent.RightDelimiter(delimiter=">"),
+                condent.RightDelimiter(delimiter=">"),
+            ]
+        )
+
 
 class TestIShouldKnowNotToUseNamedTupleByNow(TestCase):
     def test_tokens_of_different_classes_are_not_equal(self):

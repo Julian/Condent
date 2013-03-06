@@ -267,8 +267,11 @@ def tokenize(parsed, left_delimiters, right_delimiters):
             before, last = last, ""
             yield LeftDelimiter(before=before, delimiter=thing)
         elif thing in right_delimiters:
-            yield NonDelimiter(content=last)
+            if last:
+                yield NonDelimiter(content=last)
+                last = ""
             yield RightDelimiter(delimiter=thing)
+            last = ""
         else:
             last = thing
 

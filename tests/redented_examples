@@ -15,6 +15,8 @@ d = {"foo"}
 ---
 d = ("foo",)
 ---
+foo(1)
+---
 d = foo("foo")
 ---
 d = {"foo" : "bar", "baz" : "quux"}

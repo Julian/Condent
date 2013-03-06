@@ -36,32 +36,37 @@ class TestExamples(unittest.TestCase):
                     for line in example
                 )
 
-                example = "".join(Condenter(builder, config).redent(tokens))
+                got = "".join(Condenter(builder, config).redent(tokens))
                 expect = "".join(expect)
 
                 try:
-                    self.assertEqual(example, expect)
+                    self.assertEqual(got, expect)
                 except Exception:
-                    self.dump(example, expect)
+                    self.dump(example, got, expect)
                     raise
 
-    def dump(self, example, expected):
+    def dump(self, example, got, expected):
         print textwrap.dedent("""
 
         Example failed:
         ===============
 
+        Redenting
+        ---------
+
+        {0}
+
         Got
         ---
 
-        {0}
+        {1}
 
         Expected
         --------
 
-        {1}
+        {2}
 
         -----------------------------------------------------------------------
 
-        """).format(example, expected)
+        """).format(example, got, expected)
 
